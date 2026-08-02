@@ -35,5 +35,6 @@ export const generalFields = {
    
    confirmPassword: z.string({ error: 'Confirm password is required' }),
    
-   otp: z.string({ error: 'OTP is required' }).regex(otpRegex, 'OTP must be 6 digits'),
+	otp: z.string({ error: 'OTP is required' }).regex(otpRegex, 'OTP must be 6 digits'),
+	token: z.string({ error: 'Token is required' }),
 };

@@ -1,9 +1,9 @@
 import { NextFunction, Request, Response } from 'express';
-import { InternalException, ValidationErrorsException } from '../utils/error-handler/app-error';
 import { IFieldErrors, TSchemaKey, TSchema } from '../utils/types/shared.type';
 import { validateFields } from '../utils/validation/validate-fields.validation';
 import multer from 'multer';
 import { ZodType } from 'zod';
+import { InternalException, ValidationErrorsException } from '../utils/response/exception.response';
 
 type TFile = Express.Multer.File;
 
@@ -50,7 +50,6 @@ export function validation(schema: TSchema) {
 			if (!req[key]) req[key] = {};
 
 			const result = validateFields(schema[key] as ZodType, req[key]);
-			console.log('result--', result);
 			if (!result?.success && result?.errors) {
 				validationErrors[key] = result?.errors;
 			} else if (result?.success && result?.data) {

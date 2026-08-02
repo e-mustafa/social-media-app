@@ -1,7 +1,8 @@
 import { NextFunction, Request, Response } from 'express';
 import { Error as MongooseError } from 'mongoose';
 import { isDev } from '../../config/env.config';
-import AppError, { ConflictException, ValidationErrorsException } from './app-error';
+import { ConflictException, ValidationErrorsException } from '../response/exception.response';
+import AppError from './app-error';
 
 const productionMsg = 'Sorry, something went wrong.';
 
@@ -9,6 +10,7 @@ const sendDevelopmentError = (err: AppError, req: Request, res: Response) => {
 	res.status(err.statusCode).json({
 		success: false,
 		message: err.message,
+		remainingSeconds: err.remainingSeconds ? err.remainingSeconds : undefined,
 		errors: Object.keys(err.errors).length ? err.errors : undefined,
 		error: {
 			timestamp: new Date().toISOString(),
@@ -25,6 +27,7 @@ const sendProductionError = (err: AppError, res: Response) => {
 	res.status(err.statusCode).json({
 		success: false,
 		message: err.isOperational ? err.message : productionMsg,
+		remainingSeconds: err.remainingSeconds ? err.remainingSeconds : undefined,
 		errors: Object.keys(err.errors).length ? err.errors : undefined,
 	});
 };
@@ -71,6 +74,13 @@ export const globalErrorHandler = (err: Error | AppError | any, req: Request, re
 			: new AppError(err.statusCode || 500, err.message || productionMsg, 'unhandled_error', {}, false);
 
 	const cause = err?.cause;
+
+	// Handle many requests exception
+	if (error instanceof AppError && err.statusCode == 429) {
+		if (err.remainingSeconds) {
+			res.setHeader('Retry-After', err.remainingSeconds);
+		}
+	}
 
 	// Check and transform specific Mongoose/MongoDB errors
 	if (err.name === 'CastError') error = handleMongooseCastError(err);

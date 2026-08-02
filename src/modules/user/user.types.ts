@@ -1,29 +1,43 @@
 import { ObjectId } from 'mongoose';
-import { GenderEnum, ProviderEnum } from './user.enums';
+import { GenderEnum, ProviderEnum, RoleEnum, TGender, TProvider, TRole } from './user.enums';
 
 export interface IUserImg {
 	id: string;
 	url: string;
 }
 export interface IUser {
+	_id: ObjectId | string;
+	id: ObjectId | string;
+
 	firstName: string;
 	lastName: string;
 	username: string;
 	email: string;
 	password?: string;
-	gender: GenderEnum;
+	gender: TGender;
 
 	bio?: string;
-	avatar?: IUserImg;
+	avatar?: IUserImg | null | undefined;
 	covers?: IUserImg[];
 
 	birthDate?: Date;
 	phone: string;
 
-	provider: ProviderEnum;
+	provider: TProvider;
 
-	confirmedAt?: Date;
+	role: TRole;
+
+	verifiedAt?: Date;
+	loggedOutAllAt?: Date;
+
 	deactivatedAt?: Date;
-	deactivatedBy?: ObjectId;
+	deactivatedBy?: ObjectId | string;
 	deletedAt?: Date;
+}
+
+
+export interface ISessionInfo {
+	ip: string | undefined;
+	device: string | undefined;
+	createdAt: Date;
 }

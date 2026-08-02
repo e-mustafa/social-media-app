@@ -1,7 +1,7 @@
 import { HydratedDocument, model, Schema } from 'mongoose';
-import { calcAge } from '../../utils/general/date.utils';
+import { calcAge } from '../../utils/general/date';
+import { GenderEnum, ProviderEnum, RoleEnum } from './user.enums';
 import { IUser } from './user.types';
-import { GenderEnum, ProviderEnum } from './user.enums';
 
 const userSchema = new Schema<IUser>(
 	{
@@ -45,13 +45,18 @@ const userSchema = new Schema<IUser>(
 				'Password required.',
 			],
 			minLength: [8, 'Password must be at least 8 characters'],
-			maxLength: [30, 'Password must be at most 30 characters'],
 		},
 
 		provider: {
 			type: String,
 			enum: Object.values(ProviderEnum),
 			default: ProviderEnum.SYSTEM,
+		},
+
+		role: {
+			type: Number,
+			enum: Object.values(RoleEnum),
+			default: RoleEnum.USER,
 		},
 
 		gender: {
@@ -62,13 +67,18 @@ const userSchema = new Schema<IUser>(
 
 		bio: String,
 		avatar: {
-			id: String,
-			url: String,
+			type: {
+				id: String,
+				url: String,
+			},
+			default: null,
+			nullable: true,
 		},
 
 		covers: {
 			type: [{ id: String, url: String }],
 			_id: false,
+			default: [],
 		},
 
 		birthDate: {
@@ -82,9 +92,11 @@ const userSchema = new Schema<IUser>(
 		},
 		phone: String,
 
-		confirmedAt: {
+		verifiedAt: {
 			type: Date,
 		},
+
+		loggedOutAllAt: Date,
 
 		deactivatedAt: Date,
 		deactivatedBy: {

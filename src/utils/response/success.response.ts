@@ -12,5 +12,5 @@ export const successResponse = <T>({
 	data?: T;
 	status?: number;
 }) => {
-	res.status(status).json({ success: true, message, ...rest, data });
+	return res.status(status).json({ success: true, message, ...rest, data });
 };
