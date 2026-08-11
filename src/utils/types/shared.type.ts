@@ -1,3 +1,4 @@
+import { Types } from 'mongoose';
 import { ZodType } from 'zod';
 
 // export type schemaKeys = keyof Request;
@@ -8,3 +9,6 @@ export type IFieldErrors = {
 };
 
 export type TSchema = Partial<Record<TSchemaKey, ZodType>>;
+
+export type ObjId = Types.ObjectId;
+export type Id = Types.ObjectId | string;
