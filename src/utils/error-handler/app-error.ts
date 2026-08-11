@@ -4,27 +4,33 @@ export interface IError extends Error {
 	statusCode: number;
 	context: string;
 	errors: IFieldErrors;
+	remainingSeconds?: number;
+	isOperational: boolean;
 	status: string;
 }
 
-class AppError extends Error {
+abstract class AppError extends Error {
 	constructor(
 		public statusCode: number = 500,
 		message: string,
 		public context: string,
 		public errors: IFieldErrors = {},
-		// status = `${statusCode}`.endsWith('4')? 'Client Error' : 'Server Error',
 		public isOperational: boolean = true,
 		public remainingSeconds?: number,
-		public status: string = `${statusCode}`.endsWith('4') ? 'Fail' : 'Error',
+		public originalError?: unknown,
+		public status: string = `${statusCode}`.startsWith('4') ? 'Fail' : 'Error',
 		options?: ErrorOptions,
 	) {
 		super(message, options);
 		this.name = this.constructor.name;
 
-		Error.captureStackTrace(this, this.constructor);
+		// Preserve the original stack trace if available to avoid losing line-number details
+		if (originalError instanceof Error && originalError.stack) {
+			this.stack = originalError.stack;
+		} else {
+			Error.captureStackTrace(this, this.constructor);
+		}
 	}
 }
-
 
 export default AppError;

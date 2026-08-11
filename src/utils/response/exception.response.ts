@@ -2,8 +2,13 @@ import AppError from '../error-handler/app-error';
 import { IFieldErrors } from '../types/shared.type';
 
 export class InternalException extends AppError {
-	constructor(message: string = 'Sorry, Something went wrong.', context: string, statusCode: number = 500) {
-		super(statusCode, message, context, {}, true);
+	constructor(
+		message: string = 'Sorry, Something went wrong.',
+		context: string,
+		statusCode: number = 500,
+		originalError?: unknown,
+	) {
+		super(statusCode, message, context, {}, false, undefined, originalError);
 	}
 }
 
@@ -25,6 +30,12 @@ export class UnAuthorizedException extends AppError {
 	}
 }
 
+export class ForbiddenException extends AppError {
+	constructor(message: string, context: string) {
+		super(403, message, context);
+	}
+}
+
 export class ConflictException extends AppError {
 	constructor(message: string, context: string, errors: IFieldErrors = {}) {
 		super(409, message, context, errors);
@@ -33,8 +44,8 @@ export class ConflictException extends AppError {
 
 export class ManyRequestsException extends AppError {
 	constructor(
-		message: string = 'To many requests, please try again later',
-		context: string,
+		message: string = 'Too many requests, please try again later',
+		context: string = 'too_many_requests',
 		remainingSeconds?: number,
 		errors: IFieldErrors = {},
 	) {
@@ -43,7 +54,7 @@ export class ManyRequestsException extends AppError {
 }
 
 export class ValidationErrorsException extends AppError {
-	constructor(Errors: IFieldErrors, message: string = 'Validation fields error', context: string = 'validation_Errors') {
-		super(400, message, context, Errors, true);
+	constructor(errors: IFieldErrors, message: string = 'Validation fields error', context: string = 'validation_Errors') {
+		super(400, message, context, errors, true);
 	}
 }
