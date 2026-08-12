@@ -1,8 +1,8 @@
-import { ObjectId } from 'mongoose';
 import { appConfig } from '../../config/app.config';
+import { Id } from '../types/shared.type';
 import { BaseRedisCache } from './base-redis-services';
 
-export const redisResetPasswordToken = new BaseRedisCache<string, string | ObjectId>(
+export const redisResetPasswordToken = new BaseRedisCache<string, Id>(
 	(hashedToken) => `users:reset:${hashedToken}`,
 	appConfig.otp.resetPassword.expiresIn,
 );
@@ -10,7 +10,7 @@ export const redisResetPasswordToken = new BaseRedisCache<string, string | Objec
 // export const resetPasswordServices = {
 // 	set: async (
 // 		hashedToken: string,
-// 		userId: ObjectId | string,
+// 		userId: ObjId | string,
 // 		expiresInSeconds: number = appConfig.otp.resetPassword.expiresIn,
 // 	): Promise<void> => {
 // 		await redisDB.set(`users:reset:${hashedToken}`, `${userId}`, {

@@ -4,6 +4,7 @@ export const GenderEnum = {
 } as const;
 
 export type TGender = (typeof GenderEnum)[keyof typeof GenderEnum];
+export type TGendersKey = keyof typeof GenderEnum;
 
 export const ProviderEnum = {
 	SYSTEM: 'system',
@@ -28,3 +29,23 @@ export const AdminRoleEnum = {
 } as const;
 
 export type TAdminRole = (typeof AdminRoleEnum)[keyof typeof AdminRoleEnum];
+
+export const UserStatusEnum = {
+	ACTIVE: 'active',
+	INACTIVE: 'inactive',
+	BANNED: 'banned',
+	// 'pending_deletion'
+	DELETING: 'pending_deletion',
+} as const;
+
+export type TUserStatus = (typeof UserStatusEnum)[keyof typeof UserStatusEnum];
+
+export enum StatusReasonEnum {
+	USER_REQUEST = 'USER_REQUEST',
+	ADMIN_ACTION = 'ADMIN_ACTION',
+	SECURITY_SUSPICION = 'SECURITY_SUSPICION',
+	INACTIVITY_TIMEOUT = 'INACTIVITY_TIMEOUT',
+	POLICY_VIOLATION = 'POLICY_VIOLATION',
+	// USER_REACTIVATION = 'USER_REACTIVATION',
+}
+export type TStatusReason = (typeof StatusReasonEnum)[keyof typeof StatusReasonEnum];

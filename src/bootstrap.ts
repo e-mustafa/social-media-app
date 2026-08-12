@@ -1,16 +1,16 @@
+import chalk from 'chalk';
+import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express, { Express, NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
 import { corsOptions } from './config/cors.config';
-import { connectDB } from './config/database.config';
 import { ENV } from './config/env.config';
 import { limiter } from './config/rate-limit.config';
+import { connectDB } from './DB/connection';
+import { globalErrorHandler } from './middlewares/error.middleware';
 import { authRouter, authRoutes } from './modules';
-import { globalErrorHandler } from './utils/error-handler/global-error-handler';
 import { connectRedis } from './utils/redis/client.redis';
 import { NotFoundException } from './utils/response/exception.response';
-import chalk from 'chalk';
-import cookieParser from 'cookie-parser';
 
 const apiBaseUrl = ENV.apiBaseUrl;
 

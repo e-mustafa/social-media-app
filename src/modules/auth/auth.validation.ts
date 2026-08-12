@@ -1,6 +1,12 @@
 import z from 'zod';
 import { generalFields } from '../../utils/validation/general-fields.validation';
 
+export const checkUsernameSchema = {
+	body: z.strictObject({
+		username: generalFields.username,
+	}),
+};
+
 export const registerSchema = {
 	body: z
 		.strictObject({
@@ -23,7 +29,7 @@ export const resendOtpSchema = {
 		email: generalFields.email,
 	}),
 };
-export type IResendOtpODT = z.infer<typeof resendOtpSchema.body>
+export type IResendOtpODT = z.infer<typeof resendOtpSchema.body>;
 
 export const verifyAccountSchema = {
 	body: z.strictObject({
@@ -57,6 +63,24 @@ export const socialGoogleSchema = {
 };
 export type ISocialGoogleDTO = z.infer<typeof socialGoogleSchema.body>;
 
+export const changePasswordSchema = {
+	body: z
+		.strictObject({
+			currentPassword: generalFields.password,
+			newPassword: generalFields.password,
+			confirmNewPassword: generalFields.confirmPassword,
+		})
+		.refine((data) => data.newPassword === data.confirmNewPassword, {
+			error: 'new and confirm Passwords mismatch',
+			path: ['confirmNewPassword'],
+		})
+		.refine((data) => data.currentPassword !== data.newPassword, {
+			error: 'New password cannot be the same as current password',
+			path: ['newPassword'],
+		}),
+};
+export type IChangePasswordDTO = z.infer<typeof changePasswordSchema.body>;
+
 export const forgetPasswordSchema = {
 	body: z.strictObject({
 		email: generalFields.email,
@@ -65,10 +89,24 @@ export const forgetPasswordSchema = {
 export type IForgetPasswordDTO = z.infer<typeof forgetPasswordSchema.body>;
 
 export const resetPasswordSchema = {
-	body: z.strictObject({
-		token: generalFields.token,
-		password: generalFields.password,
-		confirmPassword: generalFields.confirmPassword,
-	}),
+	body: z
+		.strictObject({
+			token: generalFields.token,
+			password: generalFields.password,
+			confirmPassword: generalFields.confirmPassword,
+		})
+		.refine((data) => data.password === data.confirmPassword, {
+			error: 'Passwords mismatch',
+			path: ['confirmPassword'],
+		}),
 };
 export type IResetPasswordDTO = z.infer<typeof resetPasswordSchema.body>;
+
+export const reactivateAccountSchema = {
+	body: z.strictObject({
+		email: generalFields.email,
+		reactivationToken: generalFields.token,
+	}),
+};
+
+export type IReactivateAccount = z.infer<typeof reactivateAccountSchema.body>;

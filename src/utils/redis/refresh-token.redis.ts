@@ -1,9 +1,9 @@
-import { ObjectId } from 'mongoose';
 import { appConfig } from '../../config/app.config';
 import { ISessionInfo } from '../../modules/user/user.types';
+import { ObjId } from '../types/shared.type';
 import { BaseRedisCache } from './base-redis-services';
 
-export const redisRefreshToken = new BaseRedisCache<[string | ObjectId, string] | string | ObjectId, ISessionInfo>(
+export const redisRefreshToken = new BaseRedisCache<[string | ObjId, string] | string | ObjId, ISessionInfo>(
 	(keys) => {
 		if (Array.isArray(keys)) {
 			const [userId, jti] = keys || [];

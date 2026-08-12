@@ -1,13 +1,14 @@
-import { ObjectId } from 'mongoose';
-import { GenderEnum, ProviderEnum, RoleEnum, TGender, TProvider, TRole } from './user.enums';
+import { HydratedDocument } from 'mongoose';
+import { Id } from '../../utils/types/shared.type';
+import { TGender, TProvider, TRole, TStatusReason, TUserStatus } from './user.enums';
 
 export interface IUserImg {
 	id: string;
 	url: string;
 }
 export interface IUser {
-	_id: ObjectId | string;
-	id: ObjectId | string;
+	_id: Id;
+	id: Id;
 
 	firstName: string;
 	lastName: string;
@@ -17,10 +18,10 @@ export interface IUser {
 	gender: TGender;
 
 	bio?: string;
-	avatar?: IUserImg | null | undefined;
-	covers?: IUserImg[];
+	avatar?: IUserImg | null;
+	cover?: IUserImg | null;
 
-	birthDate?: Date;
+	birthdate?: Date;
 	phone: string;
 
 	provider: TProvider;
@@ -30,14 +31,33 @@ export interface IUser {
 	verifiedAt?: Date;
 	loggedOutAllAt?: Date;
 
-	deactivatedAt?: Date;
-	deactivatedBy?: ObjectId | string;
+	status?: TUserStatus;
+	statusReason?: TStatusReason;
+	statusChangedAt?: Date;
+
 	deletedAt?: Date;
+
+	// Lists -----------
+	friends: Id[];
+	blockedUsers: Id[];
+	// friendRequests: Id[]; // Received friend requests
+	// sentFriendRequests: Id[]; // Sent friend requests
+	// rejectedFriendRequests: Id[]; // Rejected/ignored requests
 }
 
+export type IUserDocument = HydratedDocument<IUser>;
+
+export interface IGeneralUser extends Pick<
+	IUser,
+	'firstName' | 'lastName' | 'username' | 'bio' | 'gender' | 'avatar' | 'cover'
+> {}
 
 export interface ISessionInfo {
 	ip: string | undefined;
 	device: string | undefined;
-	createdAt: Date;
+	createdAt: Date | string;
+}
+
+export interface ISessionResponse extends ISessionInfo {
+	active: boolean;
 }

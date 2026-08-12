@@ -1,16 +1,25 @@
 import { Request, Response } from 'express';
+import { appConfig } from '../../config/app.config';
 import { successResponse } from '../../utils/response/success.response';
-import { setCookies } from '../../utils/security/set-cookies.security';
+import { removeCookiesTokens, setCookies } from '../../utils/security/set-cookies.security';
+import { Id } from '../../utils/types/shared.type';
 import { ProviderEnum } from '../user/user.enums';
 import services from './auth.service';
 import {
+	IChangePasswordDTO,
 	IForgetPasswordDTO,
 	ILoginDTO,
+	IReactivateAccount,
 	IResendOtpODT,
 	IResetPasswordDTO,
 	ISocialGoogleDTO,
 	IVerifyAccountDTO,
 } from './auth.validation';
+
+export const checkUsername = async (req: Request, res: Response) => {
+	const available = await services.checkUsername(req.body.username);
+	successResponse({ res, data: { available } });
+};
 
 export const register = async (req: Request, res: Response) => {
 	await services.register(req.body);
@@ -32,7 +41,12 @@ export const verifyAccount = async (req: Request, res: Response) => {
 export const login = async (req: Request, res: Response) => {
 	const { email, password, rememberMe }: ILoginDTO = req.body || {};
 	const data = await services.login(req, { email, password, rememberMe });
-	successResponse({ res, message: 'Login successfully', data });
+
+	const message = data.requiresReactivation
+		? 'Account is deactivated. Confirmation required to reactivate.'
+		: 'Login successfully';
+
+	successResponse({ res, message, data });
 };
 
 export const refreshAccessToken = async (req: Request, res: Response) => {
@@ -59,6 +73,68 @@ export const forgetPassword = async (req: Request, res: Response) => {
 
 export const resetPassword = async (req: Request, res: Response) => {
 	const { token, password, confirmPassword }: IResetPasswordDTO = req.body || {};
-	await services.resetPassword(token, password, confirmPassword);
+	await services.resetPassword({ token, password, confirmPassword });
 	successResponse({ res, message: 'Password reset successfully' });
 };
+
+export async function changePassword(req: Request, res: Response) {
+	const { currentPassword, newPassword, confirmNewPassword }: IChangePasswordDTO = req.body || {};
+	const data = await services.changePassword(req.user._id, { currentPassword, newPassword, confirmNewPassword });
+
+	if (data && appConfig.auth.changePassword_logoutAll) {
+		// logout all sessions
+		// remove cookies
+		removeCookiesTokens(res);
+	}
+
+	successResponse({ res, message: 'Password changed successfully' });
+}
+
+// logout
+export const logout = async (req: Request, res: Response) => {
+	await services.logout(req.cookies.refreshToken);
+	// remove cookies
+	removeCookiesTokens(res);
+	successResponse({ res, message: 'Logged out successfully' });
+};
+
+export const logoutAll = async (req: Request, res: Response) => {
+	await services.logoutAll(req.cookies.refreshToken);
+	// remove cookies
+	removeCookiesTokens(res);
+	successResponse({ res, message: 'Logged out from all sessions successfully' });
+};
+
+export const getThisSession = async (req: Request, res: Response) => {
+	const data = await services.getThisSession(req.user._id, req.cookies.refreshToken);
+	successResponse({ res, data });
+};
+
+export const getMySessions = async (req: Request, res: Response) => {
+	const data = await services.getMySessions(req.user._id, req.cookies.refreshToken);
+	successResponse({ res, data });
+};
+
+export const removeSession = async (req: Request, res: Response) => {
+	const { sessionId } = req.params;
+	const isLogout = await services.removeSession(req.cookies.refreshToken, sessionId as string);
+
+	if (isLogout) {
+		// remove cookies
+		removeCookiesTokens(res);
+	}
+	successResponse({ res, message: 'Session removed successfully' });
+};
+
+export async function deactivateMyAccount(req: Request, res: Response) {
+	const data = await services.deactivateMyAccount(req.user._id as Id, req.cookies.refreshToken);
+	// remove cookies
+	removeCookiesTokens(res);
+	successResponse({ res, message: 'Account deactivated successfully', data });
+}
+
+export async function reactivateMyAccount(req: Request, res: Response) {
+	const { email, reactivationToken }: IReactivateAccount = req.body || {};
+	const data = await services.reactivateMyAccount(req, email, reactivationToken);
+	successResponse({ res, message: 'Account activated and login successfully.', data });
+}

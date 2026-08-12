@@ -2,18 +2,9 @@ import jwt, { JwtPayload, Secret, SignOptions } from 'jsonwebtoken';
 import { randomUUID } from 'node:crypto';
 import { ENV, ENVjwtSignatureLevel } from '../../../config/env.config';
 import { AdminRoleEnum, RoleEnum, TAdminRole, TRole } from '../../../modules/user/user.enums';
-import { IUser } from '../../../modules/user/user.types';
 import { InternalException, UnAuthorizedException } from '../../response/exception.response';
 import { TokenTypeEnum } from '../enum.security';
-
-export type TTokens = {
-	accessToken: string;
-	refreshToken: string;
-	accessExpiration: number;
-	refreshExpiration: number;
-
-	tokenId?: string;
-};
+import { IJwtPayload, IUserPayload, TTokens } from './token.types';
 
 // export const generateToken = (payload: JwtPayload, secretKey: Secret, options: SignOptions) => {
 export const generateToken = (payload: string | Buffer | object, secretKey: Secret, options: SignOptions) => {
@@ -58,7 +49,8 @@ export const getSignature = (userRole: TRole | string) => {
  * @returns {Object} - Object containing accessToken and refreshToken
  */
 export const generateTokens = (
-	user: Partial<IUser>,
+	// user: Partial<IUser>,
+	user: IUserPayload,
 	rememberMe: boolean = false,
 	type: 'BOTH' | 'ACCESS' | 'REFRESH' = 'BOTH',
 	customPayload: Record<string, unknown> = {},
@@ -72,13 +64,13 @@ export const generateTokens = (
 	if (!signature) {
 		throw new InternalException('Unauthorized or Invalid role', 'generateTokens');
 	}
-	const payload: JwtPayload = {
+	const payload: IJwtPayload = {
 		id: user._id,
 		_id: user._id,
 		email: user.email,
 		name: user.firstName,
-		role: Number(user.role),
 		remembered: rememberMe ? 1 : 0,
+		// role: Number(user.role),
 		// firstName: user.firstName,
 		// lastName: user.lastName,
 		// avatar: user.avatar,
@@ -128,7 +120,7 @@ export const generateTokens = (
  * @returns {Object} The decoded token payload
  * @throws {Error} If token is invalid or missing
  */
-export const decodeToken = (authorization: string, isRefreshToken = false): JwtPayload => {
+export const decodeToken = (authorization: string, isRefreshToken = false): IJwtPayload => {
 	if (!authorization) {
 		throw new InternalException('Authorization header is required', 'decodeToken');
 	}
@@ -140,7 +132,7 @@ export const decodeToken = (authorization: string, isRefreshToken = false): JwtP
 	const decodedPayload = (jwt.decode(token) as JwtPayload) || {};
 
 	if (!decodedPayload?.aud || !decodedPayload?.id) {
-		throw new InternalException('Invalid token structure or corrupted payload', 'decodeToken');
+		throw new InternalException('Invalid token structure or corrupted payload, Please login again', 'decodeToken');
 	}
 
 	// Determine signature based on audience
@@ -148,12 +140,12 @@ export const decodeToken = (authorization: string, isRefreshToken = false): JwtP
 
 	// use try catch to handle token expiration exception
 	// Verify token using the appropriate secret
-	let decoded: JwtPayload;
+	let decoded: IJwtPayload;
 	try {
 		decoded = verifyToken(
 			token,
 			isRefreshToken ? signature.refreshTokenSecret : signature.accessTokenSecret,
-		) as JwtPayload;
+		) as IJwtPayload;
 	} catch (error) {
 		if (isRefreshToken) {
 			throw new UnAuthorizedException(

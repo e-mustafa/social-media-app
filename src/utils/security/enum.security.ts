@@ -11,4 +11,5 @@ export enum TokenTypeEnum {
 export enum CookiesKeysEnum {
 	accessToken = 'access-token',
 	refreshToken = 'refresh-token',
+	tokenId = 'tokenId',
 }

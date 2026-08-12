@@ -14,6 +14,9 @@ export const appConfig = {
 		changeEmail: {
 			expiresIn: 60 * 10, // 10 minutes
 		},
+		reactivateAccount: {
+			expiresIn: 60 * 10, // 10 minutes
+		},
 		verifyEmail: {
 			expiresIn: 60 * 10, // 10 minutes
 			cooldownPeriod: 60 * 1, // 1 minute
@@ -52,7 +55,13 @@ export const appConfig = {
 	},
 
 	user: {
-		maxCovers: 2,
+		avatar: {
+			maxSize: 2 * 1024 * 1024, // 2MB
+		},
+		cover: {
+			maxSize: 3 * 1024 * 1024, // 3MB
+			maxCovers: 1,
+		},
 	},
 };
 

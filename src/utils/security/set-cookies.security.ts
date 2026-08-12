@@ -1,11 +1,12 @@
 import { CookieOptions, Response } from 'express';
 import { ENVjwtSignatureLevel } from '../../config/env.config';
 import { CookiesKeysEnum } from './enum.security';
-import { TTokens } from './token/token';
+import { TTokens } from './token/token.types';
+
+const options: CookieOptions = { httpOnly: true, secure: true, sameSite: 'lax' };
 
 export function setCookies(res: Response, data: TTokens) {
 	if (!res || !data) return;
-	const options: CookieOptions = { httpOnly: true, secure: true, sameSite: 'lax' };
 
 	// set access token in cookie
 	if (data.accessToken) {
@@ -24,3 +25,22 @@ export function setCookies(res: Response, data: TTokens) {
 		});
 	}
 }
+
+/**
+ * Clears authentication tokens stored in response cookies
+ * @param res - Express Response object
+ * @param customOptions - Optional cookie configuration to override defaults
+ */
+export const removeCookiesTokens = (res: Response, customOptions?: CookieOptions): void => {
+	if (!res) return;
+
+	const clearOptions: CookieOptions = {
+		...options,
+		...customOptions,
+	};
+
+	// Loop over enum values and clear cookies with exact options
+	Object.values(CookiesKeysEnum).forEach((key) => {
+		res.clearCookie(key, clearOptions);
+	});
+};
