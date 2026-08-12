@@ -8,7 +8,7 @@ import { ENV } from './config/env.config';
 import { limiter } from './config/rate-limit.config';
 import { connectDB } from './DB/connection';
 import { globalErrorHandler } from './middlewares/error.middleware';
-import { authRouter, authRoutes, userRouter, userRoutes } from './modules';
+import { authRouter, authRoutes, friendshipRouter, friendshipRoutes, userRouter, userRoutes } from './modules';
 import { connectRedis } from './utils/redis/client.redis';
 import { NotFoundException } from './utils/response/exception.response';
 
@@ -33,6 +33,7 @@ export const bootstrap = async (app: Express): Promise<void> => {
 	// routes --------------------------------------------------------
 	app.use(`${apiBaseUrl}${authRoutes.base}`, authRouter);
 	app.use(`${apiBaseUrl}${userRoutes.base}`, userRouter);
+	app.use(`${apiBaseUrl}${friendshipRoutes.base}`, friendshipRouter);
 	// routes --------------------------------------------------------
 
 	// handle not found routes
