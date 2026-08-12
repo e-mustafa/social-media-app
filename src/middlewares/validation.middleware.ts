@@ -1,17 +1,9 @@
 import { NextFunction, Request, Response } from 'express';
-import { IFieldErrors, TSchemaKey, TSchema } from '../utils/types/shared.type';
-import { validateFields } from '../utils/validation/validate-fields.validation';
-import multer from 'multer';
-import { ZodType } from 'zod';
 import { InternalException, ValidationErrorsException } from '../utils/response/exception.response';
+import { IFieldErrors, TSchema, TSchemaKey } from '../utils/types/shared.type';
+import { validateFields } from '../utils/validation/validate-fields.validation';
 
-type TFile = Express.Multer.File;
-
-// interface IRequest extends Request, Express.Request {
-// 	file?: TFile;
-// 	files?: TFile[];
-// }
-
+// Express Middleware for validating request data against Zod schemas
 export function validation(schema: TSchema) {
 	return (req: Request, res: Response, next: NextFunction) => {
 		if (!req || !schema) {
@@ -47,13 +39,22 @@ export function validation(schema: TSchema) {
 			const currentSchema = schema[key];
 			if (!currentSchema) return;
 
-			if (!req[key]) req[key] = {};
+			// if (!req[key]) req[key] = {};
+			// Read target property safely without triggering getter errors or using 'any'
+			const currentSegmentData = (req[key] as Record<string, unknown> | undefined) || {};
 
-			const result = validateFields(schema[key] as ZodType, req[key]);
+			const result = validateFields(currentSchema, currentSegmentData);
+
 			if (!result?.success && result?.errors) {
 				validationErrors[key] = result?.errors;
-			} else if (result?.success && result?.data) {
-				req[key] = result.data;
+			} else if (result?.success && result?.data !== undefined) {
+				// Safely assign validated and coerced data using Object.defineProperty to bypass getter-only properties
+				Object.defineProperty(req, key, {
+					value: result.data,
+					writable: true,
+					configurable: true,
+					enumerable: true,
+				});
 			}
 		});
 
@@ -63,5 +64,5 @@ export function validation(schema: TSchema) {
 		}
 
 		next();
-	};;;
+	};
 }

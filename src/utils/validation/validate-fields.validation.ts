@@ -1,5 +1,6 @@
-import { ZodError, ZodType } from 'zod';
+import z, { ZodError, ZodType } from 'zod';
 
+// Types for validation errors map and schema structures
 type TErrors = Record<string, string>;
 
 /**
@@ -24,18 +25,17 @@ const formatZodErrors = (error: ZodError): TErrors => {
 	return formattedErrors;
 };
 
-export const validateFields = <T>(
-	schema: ZodType,
-	data: T,
-): { success: boolean; errors?: TErrors; data?: T } | undefined => {
-	if (!schema || !data) return;
+export const validateFields = <T extends ZodType>(
+	schema: T,
+	data: unknown,
+): { success: boolean; errors?: TErrors; data?: z.infer<T> } | undefined => {
+	if (!schema) return { success: false };
 
 	const result = schema.safeParse(data ?? {});
-	console.log('result', result);
 
 	if (!result.success) {
 		return { success: false, errors: formatZodErrors(result.error) };
 	}
 
-	return { success: result.success, data: result.data as T };
+	return { success: result.success, data: result.data };
 };
