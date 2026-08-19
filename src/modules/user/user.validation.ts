@@ -1,5 +1,6 @@
 import z from 'zod';
-import { generalFields } from '../../utils/validation/general-fields.validation';
+import { generalFields, getFileSchema } from '../../shared/validation/general-fields.validation';
+import { sortOrderEnum } from '../../shared/enums/query.enum';
 
 export const updateProfileSchema = {
 	body: z
@@ -17,19 +18,18 @@ export const updateProfileSchema = {
 export type IUpdateProfileDTO = z.infer<typeof updateProfileSchema.body>;
 
 export const uploadAvatarSchema = {
-	body: z.strictObject({
-		avatar: generalFields.file,
+	file: z.strictObject({
+		avatar: getFileSchema('Avatar image is required'),
 	}),
 };
-export type IUploadAvatarODT = z.infer<typeof uploadAvatarSchema.body>;
+export type IUploadAvatarDTO = z.infer<typeof uploadAvatarSchema.file>;
 
 export const uploadCoverSchema = {
-	body: z.strictObject({
-		cover: generalFields.file,
+	file: z.strictObject({
+		cover: getFileSchema('Cover image is required'),
 	}),
 };
-
-export type IUploadCoverDTO = z.infer<typeof uploadCoverSchema.body>;
+export type IUploadCoverDTO = z.infer<typeof uploadCoverSchema.file>;
 
 export const paramsIdSchema = {
 	params: z.strictObject({
@@ -46,3 +46,12 @@ export const resetPasswordSchema = {
 	}),
 };
 export type IResetPasswordDTO = z.infer<typeof resetPasswordSchema.body>;
+
+export const getUsersSchema = {
+	query: z.object({
+		page: generalFields.page.default(1).optional(),
+		limit: generalFields.limit.default(10).optional(),
+		order: generalFields.order.default( sortOrderEnum.DESC).optional(),
+		search: generalFields.search.optional(),
+	}),
+};

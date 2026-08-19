@@ -1,5 +1,5 @@
 import { HydratedDocument } from 'mongoose';
-import { Id } from '../../utils/types/shared.type';
+import { Id } from '../../shared/types';
 import { TGender, TProvider, TRole, TStatusReason, TUserStatus } from './user.enums';
 
 export interface IUserImg {
@@ -38,8 +38,8 @@ export interface IUser {
 	deletedAt?: Date;
 
 	// Lists -----------
-	friends: Id[];
-	blockedUsers: Id[];
+	// friends: Id[];
+	// blockedUsers: Id[];
 	// friendRequests: Id[]; // Received friend requests
 	// sentFriendRequests: Id[]; // Sent friend requests
 	// rejectedFriendRequests: Id[]; // Rejected/ignored requests
@@ -49,7 +49,7 @@ export type IUserDocument = HydratedDocument<IUser>;
 
 export interface IGeneralUser extends Pick<
 	IUser,
-	'firstName' | 'lastName' | 'username' | 'bio' | 'gender' | 'avatar' | 'cover'
+	'_id' | 'id' | 'firstName' | 'lastName' | 'username' | 'bio' | 'gender' | 'avatar' | 'cover'
 > {}
 
 export interface ISessionInfo {

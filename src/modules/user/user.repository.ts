@@ -24,3 +24,5 @@ export class UserRepository extends BaseRepository<IUser> {
 		return this.findOne({ email }, options);
 	}
 }
+
+export default new UserRepository();

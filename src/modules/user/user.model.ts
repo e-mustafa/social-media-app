@@ -131,13 +131,13 @@ const userSchema = new Schema<IUser>(
 		},
 
 		// Block
-		blockedUsers: {
-			type: [{ type: Schema.Types.ObjectId, ref: 'User' }],
-			default: [],
-		},
+		// blockedUsers: {
+		// 	type: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+		// 	default: [],
+		// },
 
 		// Friends
-		friends: { type: [{ type: Schema.Types.ObjectId, ref: 'User' }], default: [] },
+		// friends: { type: [{ type: Schema.Types.ObjectId, ref: 'User' }], default: [] },
 	},
 	{
 		timestamps: true,
@@ -167,6 +167,12 @@ userSchema.plugin(mongooseLeanVirtuals);
 userSchema.index({ deletedAt: 1, status: 1 });
 userSchema.index({ friends: 1 });
 userSchema.index({ blockedUsers: 1 });
+
+// virtuals ------------------------------------
+userSchema.virtual('name').get(function () {
+	if (!this.firstName || !this.lastName) return '';
+	return `${this.firstName} ${this.lastName || ''}`.trim();
+});
 
 // middlewares ------------------------------------
 // Document Middleware: Hash password on document save()

@@ -40,12 +40,12 @@ export const UserStatusEnum = {
 
 export type TUserStatus = (typeof UserStatusEnum)[keyof typeof UserStatusEnum];
 
-export enum StatusReasonEnum {
-	USER_REQUEST = 'USER_REQUEST',
-	ADMIN_ACTION = 'ADMIN_ACTION',
-	SECURITY_SUSPICION = 'SECURITY_SUSPICION',
-	INACTIVITY_TIMEOUT = 'INACTIVITY_TIMEOUT',
-	POLICY_VIOLATION = 'POLICY_VIOLATION',
+export const StatusReasonEnum = {
+	USER_REQUEST: 'USER_REQUEST',
+	ADMIN_ACTION: 'ADMIN_ACTION',
+	SECURITY_SUSPICION: 'SECURITY_SUSPICION',
+	INACTIVITY_TIMEOUT: 'INACTIVITY_TIMEOUT',
+	POLICY_VIOLATION: 'POLICY_VIOLATION',
 	// USER_REACTIVATION = 'USER_REACTIVATION',
-}
+} as const;
 export type TStatusReason = (typeof StatusReasonEnum)[keyof typeof StatusReasonEnum];
