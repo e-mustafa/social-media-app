@@ -1,13 +1,13 @@
 import { NextFunction, Request, Response } from 'express';
 import { Error as MongooseError } from 'mongoose';
 import { isDev } from '../config/env.config';
-import AppError from '../utils/error-handler/app-error';
 import {
 	ConflictException,
 	InternalException,
 	UnAuthorizedException,
 	ValidationErrorsException,
-} from '../utils/response/exception.response';
+} from '../shared/response/exception.response';
+import AppError from '../utils/error-handler/app-error';
 
 const productionMsg = 'Sorry, something went wrong.';
 

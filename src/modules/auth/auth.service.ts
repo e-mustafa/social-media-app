@@ -3,6 +3,17 @@ import { TokenPayload } from 'google-auth-library';
 import { URL } from 'node:url';
 import { appConfig, frontendUrls } from '../../config/app.config';
 import { ENV } from '../../config/env.config';
+import {
+	BadRequestException,
+	ConflictException,
+	ForbiddenException,
+	InternalException,
+	ManyRequestsException,
+	NotFoundException,
+	UnAuthorizedException,
+	ValidationErrorsException,
+} from '../../shared/response/exception.response';
+import { Id } from '../../shared/types/validation.type';
 import emailEvents from '../../utils/events/email.events';
 import { reactiveAccountServices } from '../../utils/redis/reactivate-account-otp-service.redis';
 import { redisRefreshToken } from '../../utils/redis/refresh-token.redis';
@@ -14,22 +25,11 @@ import {
 	redisVerifyAccountOtp,
 	setRedisVerifyAccount,
 } from '../../utils/redis/verify-account-otp.redis';
-import {
-	BadRequestException,
-	ConflictException,
-	ForbiddenException,
-	InternalException,
-	ManyRequestsException,
-	NotFoundException,
-	UnAuthorizedException,
-	ValidationErrorsException,
-} from '../../utils/response/exception.response';
 import { verifyHash } from '../../utils/security/hash.security';
 import { generateOtp, generateRandomToken, hashOtp, hashToken, verifyOtp } from '../../utils/security/otp-and-token';
 import { verifyOAuth2Google } from '../../utils/security/token/providers/google.token';
 import { decodeToken, generateTokens } from '../../utils/security/token/token';
 import { TTokens } from '../../utils/security/token/token.types';
-import { Id } from '../../utils/types/shared.type';
 import { ProviderEnum, StatusReasonEnum, TProvider, UserStatusEnum } from '../user/user.enums';
 import { UserRepository } from '../user/user.repository';
 import { ISessionInfo, ISessionResponse, IUser, IUserDocument } from '../user/user.types';

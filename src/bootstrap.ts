@@ -8,9 +8,23 @@ import { ENV } from './config/env.config';
 import { limiter } from './config/rate-limit.config';
 import { connectDB } from './DB/connection';
 import { globalErrorHandler } from './middlewares/error.middleware';
-import { authRouter, authRoutes, friendshipRouter, friendshipRoutes, userRouter, userRoutes } from './modules';
+import {
+	authRouter,
+	authRoutes,
+	blockRouter,
+	blockRoutes,
+	commentRouter,
+	commentRoutes,
+	friendRouter,
+	friendRoutes,
+	postRouter,
+	postRoutes,
+	userRouter,
+	userRoutes,
+} from './modules';
+import { reactionRouter, reactionRoutes } from './modules/reaction';
+import { NotFoundException } from './shared/response/exception.response';
 import { connectRedis } from './utils/redis/client.redis';
-import { NotFoundException } from './utils/response/exception.response';
 
 const apiBaseUrl = ENV.apiBaseUrl;
 
@@ -33,7 +47,11 @@ export const bootstrap = async (app: Express): Promise<void> => {
 	// routes --------------------------------------------------------
 	app.use(`${apiBaseUrl}${authRoutes.base}`, authRouter);
 	app.use(`${apiBaseUrl}${userRoutes.base}`, userRouter);
-	app.use(`${apiBaseUrl}${friendshipRoutes.base}`, friendshipRouter);
+	app.use(`${apiBaseUrl}${friendRoutes.base}`, friendRouter);
+	app.use(`${apiBaseUrl}${blockRoutes.base}`, blockRouter);
+	app.use(`${apiBaseUrl}${postRoutes.base}`, postRouter);
+	app.use(`${apiBaseUrl}${commentRoutes.base}`, commentRouter);
+	app.use(`${apiBaseUrl}${reactionRoutes.base}`, reactionRouter);
 	// routes --------------------------------------------------------
 
 	// handle not found routes

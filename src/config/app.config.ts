@@ -1,3 +1,5 @@
+import { sortOrderEnum } from '../shared/enums/query.enum';
+
 export const appConfig = {
 	auth: {
 		password: {
@@ -31,25 +33,7 @@ export const appConfig = {
 			expiresIn: 60 * 60 * 24 * 7, // 7 days
 		},
 	},
-	messages: {
-		maxMessageLength: 1000,
-		maxAttachmentsPerMessage: 4,
-		maxAttachmentSize: 10 * 1024 * 1024, // 10MB
 
-		maxMessagesPerMinute: 10,
-		allowedAttachmentTypes: [
-			'image/jpeg',
-			'image/png',
-			'image/gif',
-			'image/webp',
-			'image/svg+xml',
-			'image/bmp',
-			'image/tiff',
-			'image/heic',
-			'image/heif',
-			'image/avif',
-		],
-	},
 	security: {
 		minPasswordLength: 8,
 	},
@@ -63,6 +47,46 @@ export const appConfig = {
 			maxCovers: 1,
 		},
 	},
+
+	post: {
+		attachments: {
+			maxSize: 5 * 1024 * 1024, // 5MB
+			maxCount: 5,
+		},
+		defaultOrder: sortOrderEnum.DESC,
+		defaultLimit: 10,
+	},
+	comment: {
+		attachments: {
+			maxSize: 3 * 1024 * 1024, // 3MB
+			maxCount: 2,
+		},
+		defaultOrder: sortOrderEnum.ASC,
+		defaultLimit: 10,
+	},
+	reaction: {
+		defaultOrder: sortOrderEnum.DESC,
+		defaultLimit: 10,
+	},
+	// messages: {
+	// 	maxMessageLength: 1000,
+	// 	maxAttachmentsPerMessage: 4,
+	// 	maxAttachmentSize: 10 * 1024 * 1024, // 10MB
+
+	// 	maxMessagesPerMinute: 10,
+	// 	allowedAttachmentTypes: [
+	// 		'image/jpeg',
+	// 		'image/png',
+	// 		'image/gif',
+	// 		'image/webp',
+	// 		'image/svg+xml',
+	// 		'image/bmp',
+	// 		'image/tiff',
+	// 		'image/heic',
+	// 		'image/heif',
+	// 		'image/avif',
+	// 	],
+	// },
 };
 
 export const frontendUrls = {

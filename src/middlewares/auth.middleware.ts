@@ -1,12 +1,13 @@
 import { NextFunction, Request, Response } from 'express';
 import { AdminRoleEnum, RoleEnum, TRole } from '../modules/user/user.enums';
-import { UserRepository } from '../modules/user/user.repository';
-import { UnAuthorizedException } from '../utils/response/exception.response';
+import userRepository from '../modules/user/user.repository';
+import { UnAuthorizedException } from '../shared/response/exception.response';
+import { IUserBody } from '../shared/types';
 import { decodeToken } from '../utils/security/token/token';
 import { IJwtPayload } from '../utils/security/token/token.types';
 
 // Instantiate repository once outside request context
-const UserRepo = new UserRepository();
+const UserRepo = userRepository;
 
 export const auth = (isOptional = false) => {
 	return async (req: Request, res: Response, next: NextFunction) => {
@@ -25,10 +26,20 @@ export const auth = (isOptional = false) => {
 		}
 		req.decoded = decoded;
 
-		const user = await UserRepo.findById(decoded.id).lean().select('-friends -blockedUsers -password').exec();
+		const user: IUserBody | null = await UserRepo.findById(decoded.id)
+			.lean()
+			.select('-friends -blockedUsers -password')
+			.exec();
 		if (!user) {
 			if (isOptional) return next();
 			throw new UnAuthorizedException('User account not found or inactive', 'Auth-middleware-user-not-found');
+		}
+
+		if (user && !user.verifiedAt) {
+			throw new UnAuthorizedException(
+				'User account not verified, Please verify your account first.',
+				'Auth-middleware-user-not-verified',
+			);
 		}
 
 		req.user = user;

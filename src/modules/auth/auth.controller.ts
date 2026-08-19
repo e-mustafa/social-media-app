@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
 import { appConfig } from '../../config/app.config';
-import { successResponse } from '../../utils/response/success.response';
+import { successResponse } from '../../shared/response/success.response';
+import { Id } from '../../shared/types/validation.type';
 import { removeCookiesTokens, setCookies } from '../../utils/security/set-cookies.security';
-import { Id } from '../../utils/types/shared.type';
 import { ProviderEnum } from '../user/user.enums';
 import services from './auth.service';
 import {
@@ -23,7 +23,7 @@ export const checkUsername = async (req: Request, res: Response) => {
 
 export const register = async (req: Request, res: Response) => {
 	await services.register(req.body);
-	successResponse({ res, message: 'Your account created successfully, please verify your account' });
+	successResponse({ res, status: 201, message: 'Your account created successfully, please verify your account' });
 };
 
 export const resendOtp = async (req: Request, res: Response) => {
@@ -59,7 +59,7 @@ export const socialLogin_google = async (req: Request, res: Response) => {
 	const { isNew, tokens } = await services.socialLogin_google(ProviderEnum.GOOGLE, idToken);
 	setCookies(res, tokens);
 	if (isNew) {
-		successResponse({ res, message: 'Account created successfully', data: tokens });
+		successResponse({ res, status: 201, message: 'Account created successfully', data: tokens });
 	} else {
 		successResponse({ res, message: 'Login successfully', data: tokens });
 	}

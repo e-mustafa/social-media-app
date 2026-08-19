@@ -1,10 +1,13 @@
 import {
+	Aggregate,
+	AggregateOptions,
 	ClientSession,
 	HydratedDocument,
 	InsertManyOptions,
 	LeanOptions,
 	Model,
 	MongooseUpdateQueryOptions,
+	PipelineStage,
 	PopulateOptions,
 	Query,
 	QueryFilter,
@@ -12,6 +15,7 @@ import {
 	Types,
 	UpdateQuery,
 } from 'mongoose';
+import { IPaginatedResult, PopulateResult } from '../shared/types';
 
 type Id = Types.ObjectId | string;
 
@@ -19,21 +23,11 @@ type Id = Types.ObjectId | string;
 type LeanResult<R, T> = R extends Array<unknown> ? T[] : R extends null ? T | null : T;
 
 // Helper type to unroll redundant array nesting
-type EnsureArrayData<R> = R extends Array<infer U> ? U[] : R[];
+// type EnsureArrayData<R> = R extends Array<infer U> ? U[] : R[];
 
-export interface IPaginationMetaData {
-	page: number;
-	limit: number;
-	total: number;
-	totalPages: number;
-	hasNext: boolean;
-	hasPrev: boolean;
-}
-
-export interface IPaginatedResult<Data> {
-	data: Data;
-	metadata: IPaginationMetaData;
-}
+// Extract single item type from array or existing paginated result
+type ExtractItemType<R> = R extends Array<infer U> ? U : R extends IPaginatedResult<infer V> ? V : R;
+// Utility type to transform return type R to populated type P while maintaining nullability and structure
 
 // Query Options Interface
 export interface IQueryOptions {
@@ -88,9 +82,17 @@ export class RepositoryQueryBuilder<T, R = HydratedDocument<T>> {
 		return this;
 	}
 
-	populate(options: string | PopulateOptions | (string | PopulateOptions)[]) {
-		this.query.populate(options as PopulateOptions);
-		return this;
+	// populate(options: string | PopulateOptions | (string | PopulateOptions)[]) {
+	// 	this.query.populate(options as PopulateOptions);
+	// 	return this;
+	// }
+
+	// Populates path references and dynamically updates return generic type P
+	populate<P = R>(
+		options: string | PopulateOptions | (string | PopulateOptions)[],
+	): RepositoryQueryBuilder<T, PopulateResult<R, P>> {
+		this.query.populate(options as unknown as PopulateOptions);
+		return this as unknown as RepositoryQueryBuilder<T, PopulateResult<R, P>>;
 	}
 
 	sort(fields: string | Record<string, 1 | -1>) {
@@ -105,16 +107,16 @@ export class RepositoryQueryBuilder<T, R = HydratedDocument<T>> {
 		return this as unknown as RepositoryQueryBuilder<T, LeanType>;
 	}
 
-	session(session: ClientSession) {
+	session(session: ClientSession): RepositoryQueryBuilder<T, R> {
 		this.query.session(session);
 		return this;
 	}
 
-	paginate(page: number = 1, limit: number = 10): RepositoryQueryBuilder<T, IPaginatedResult<EnsureArrayData<R>>> {
+	paginate(page: number = 1, limit: number = 10): RepositoryQueryBuilder<T, IPaginatedResult<ExtractItemType<R>>> {
 		this.isPagination = true;
 		this.pageNum = Math.max(1, page);
 		this.limitNum = Math.max(1, limit);
-		return this as unknown as RepositoryQueryBuilder<T, IPaginatedResult<EnsureArrayData<R>>>;
+		return this as unknown as RepositoryQueryBuilder<T, IPaginatedResult<ExtractItemType<R>>>;
 	}
 
 	async exec(): Promise<R> {
@@ -303,6 +305,21 @@ export abstract class BaseRepository<T> {
 			success: Boolean(res.acknowledged) && res.deletedCount > 0,
 			deletedCount: res.deletedCount,
 		};
+	}
+
+	async exists(filter: QueryFilter<T>, options?: IQueryOptions): Promise<boolean> {
+		const finalFilter = this.combineFilters(filter, !!options?.ignoreDefaultFilters);
+		const res = await this.Model.exists(finalFilter);
+		return res !== null;
+	}
+
+	async distinct<T>(key: string, filter: QueryFilter<T>, options?: IQueryOptions) {
+		const finalFilter = this.combineFilters(filter, !!options?.ignoreDefaultFilters);
+		return (await this.Model.distinct(key, finalFilter, options)) as unknown as T[];
+	}
+
+	aggregate<K extends any>(pipeline?: PipelineStage[], options?: AggregateOptions) {
+		return this.Model.aggregate(pipeline, options) as Aggregate<K[]>;
 	}
 
 	/**

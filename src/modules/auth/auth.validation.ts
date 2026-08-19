@@ -1,5 +1,5 @@
 import z from 'zod';
-import { generalFields } from '../../utils/validation/general-fields.validation';
+import { generalFields } from '../../shared/validation/general-fields.validation';
 
 export const checkUsernameSchema = {
 	body: z.strictObject({
