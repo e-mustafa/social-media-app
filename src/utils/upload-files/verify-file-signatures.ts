@@ -1,6 +1,6 @@
 import { fileTypeFromBuffer, fileTypeFromFile } from 'file-type';
 import path from 'node:path';
-import { BadRequestException } from '../response/exception.response';
+import { BadRequestException } from '../../shared/response/exception.response';
 import { fileTypes } from './mime-types';
 // import { fileTypeFromBuffer, fileTypeFromFile } from 'file-type';
 // import { createException } from '../response/throw.exceptions.js';

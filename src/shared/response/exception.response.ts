@@ -1,5 +1,5 @@
-import AppError from '../error-handler/app-error';
-import { IFieldErrors } from '../types/shared.type';
+import AppError from '../../utils/error-handler/app-error';
+import { IFieldErrors } from '../types/validation.type';
 
 export class InternalException extends AppError {
 	constructor(
@@ -58,3 +58,10 @@ export class ValidationErrorsException extends AppError {
 		super(400, message, context, errors, true);
 	}
 }
+
+// todo: handle TimeoutError
+// export class TimeoutException extends AppError {
+// 	constructor(message: string = '', context: string = 'TimeoutError', original: unknown = undefined) {
+// 		super(499, message, context, undefined, true, undefined, original);
+// 	}
+// }

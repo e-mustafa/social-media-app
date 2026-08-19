@@ -1,5 +1,5 @@
 import { appConfig } from '../../config/app.config';
-import { Id } from '../types/shared.type';
+import { Id } from '../../shared/types/validation.type';
 import { BaseRedisCache } from './base-redis-services';
 
 export const redisResetPasswordToken = new BaseRedisCache<string, Id>(

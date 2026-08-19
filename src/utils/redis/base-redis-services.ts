@@ -1,4 +1,4 @@
-import { ObjId } from '../types/shared.type';
+import { ObjId } from '../../shared/types/validation.type';
 import { redisDB } from './client.redis';
 
 export type TRedisKeyPart = string | number | ObjId;

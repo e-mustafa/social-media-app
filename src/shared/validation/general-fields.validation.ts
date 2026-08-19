@@ -1,5 +1,7 @@
+import { Readable } from 'node:stream';
 import z from 'zod';
 import { GenderEnum } from '../../modules/user/user.enums';
+import { sortOrderEnum } from '../enums/query.enum';
 
 // Regex for strong password: Min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special character
 const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
@@ -20,6 +22,7 @@ export const uploadFileSchema = z.object({
 	fieldname: z.string(),
 	originalname: z.string(),
 	encoding: z.string(),
+	// mimetype: z.mime(),
 	mimetype: z.string(),
 	// Handles buffer validation cleanly for memoryStorage setups
 	buffer: z
@@ -27,11 +30,45 @@ export const uploadFileSchema = z.object({
 			message: 'File buffer is required',
 		})
 		.optional(),
+	stream: z.custom<Readable>().optional(), // Added to satisfy Express.Multer.File requirements
 	destination: z.string().optional(),
 	filename: z.string().optional(),
 	size: z.number().positive('File cannot be empty'),
 	path: z.string().optional(),
 	filePath: z.string().optional(),
+});
+
+// Dynamic file schema factory for strict typing and custom error messages
+export const getFileSchema = (errorMessage = 'File is required') =>
+	z.object(
+		uploadFileSchema.shape,
+		// {
+		// 	...uploadFileSchema.shape,
+		// 	fieldname: z.string(),
+		// 	originalname: z.string(),
+		// 	encoding: z.string(),
+		// 	mimetype: z.string(),
+		// 	buffer: z
+		// 		.custom<Buffer>((val) => Buffer.isBuffer(val), {
+		// 			message: 'File buffer is required',
+		// 		})
+		// 		.optional(),
+		// 	stream: z.custom<Readable>().optional(),
+		// 	destination: z.string().optional(),
+		// 	filename: z.string().optional(),
+		// 	size: z.number().positive('File cannot be empty'),
+		// 	path: z.string().optional(),
+		// 	filePath: z.string().optional(),
+		// },
+		{
+			error: errorMessage,
+		},
+	);
+
+export const attachmentsDBSchema = z.strictObject({
+	id: z.string().trim(),
+	url: z.string().trim(),
+	resourceType: z.string().trim(),
 });
 
 export const generalFields = {
@@ -80,13 +117,21 @@ export const generalFields = {
 
 	page: z.coerce.number().int().min(1).default(1),
 	limit: z.coerce.number().int().min(1).max(100).default(10),
+	order: z.enum(Object.values(sortOrderEnum)),
 	search: z
 		.string()
 		.trim()
-		.max(100)
+		.max(100, 'Search must be at most 5000 character')
 		.optional()
 		.transform((val) => (val ? val : undefined)),
+
+	// postContent: z
+	// 	.string()
+	// 	.min(2, 'Content must be at least 2 character.')
+	// 	.max(5000, 'Content must be at most 5000 character.')
 };
+
+export const arrayIdsSchema = z.array(generalFields.id).max(10, 'Tagged users cannot exceed 10 users');
 
 export const paramsIdSchema = {
 	params: z.strictObject({
@@ -99,7 +144,34 @@ export const querySchema = {
 	query: z.object({
 		page: generalFields.page,
 		limit: generalFields.limit,
+		order: generalFields.order,
 		search: generalFields.search,
 	}),
 };
 export type IQueryDTO = z.infer<typeof querySchema.query>;
+
+/**
+ * Helper function to safely parse FormData array fields (JSON string or comma-separated).
+ * Accepts a full ZodArray schema to allow flexible array validations (.min, .max, .nonempty, etc.).
+ */
+export const parseFormDataArray = <T extends z.ZodTypeAny = typeof generalFields.id>(arraySchema: z.ZodArray<T>) => {
+	// Fallback to default arrayIds schema when arraySchema is omitted
+
+	return z.preprocess((val) => {
+		if (!val) return undefined;
+		if (typeof val === 'string') {
+			try {
+				const parsed = JSON.parse(val);
+				if (Array.isArray(parsed)) return parsed;
+			} catch {
+				return val
+					.split(',')
+					.map((item) => item.trim())
+					.filter(Boolean);
+			}
+		}
+		return val;
+	}, arraySchema);
+};
+
+export const taggedUsers = parseFormDataArray(arrayIdsSchema).optional();

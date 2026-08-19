@@ -1,6 +1,6 @@
 import { OAuth2Client, TokenPayload } from 'google-auth-library';
 import { ENVprovidersAuth } from '../../../../config/env.config';
-import { InternalException } from '../../../response/exception.response';
+import { InternalException } from '../../../../shared/response/exception.response';
 
 export async function verifyOAuth2Google(idToken: string): Promise<TokenPayload | undefined> {
 	if (!idToken) {

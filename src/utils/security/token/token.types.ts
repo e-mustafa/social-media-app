@@ -1,6 +1,6 @@
 import { JwtPayload } from 'jsonwebtoken';
 import { IUser } from '../../../modules/user/user.types';
-import { Id } from '../../types/shared.type';
+import { Id } from '../../../shared/types';
 
 export type TTokens = {
 	accessToken: string;

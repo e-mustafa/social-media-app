@@ -1,5 +1,5 @@
 import { ENV } from '../../config/env.config';
-import { sendEmail } from './sendEmail';
+import { sendEmail } from './send-email';
 
 const appName = ENV.appName;
 

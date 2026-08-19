@@ -2,7 +2,7 @@ import jwt, { JwtPayload, Secret, SignOptions } from 'jsonwebtoken';
 import { randomUUID } from 'node:crypto';
 import { ENV, ENVjwtSignatureLevel } from '../../../config/env.config';
 import { AdminRoleEnum, RoleEnum, TAdminRole, TRole } from '../../../modules/user/user.enums';
-import { InternalException, UnAuthorizedException } from '../../response/exception.response';
+import { InternalException, UnAuthorizedException } from '../../../shared/response/exception.response';
 import { TokenTypeEnum } from '../enum.security';
 import { IJwtPayload, IUserPayload, TTokens } from './token.types';
 
