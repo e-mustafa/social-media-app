@@ -1,6 +1,6 @@
 export const FriendRequestStatusEnum = {
 	PENDING: 'pending',
-	// ACCEPTED: 'accepted',
+	ACCEPTED: 'accepted',
 	REJECTED: 'rejected',
 } as const;
 

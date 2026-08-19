@@ -1,19 +1,19 @@
 import { GenericRepository, IPaginatedResult } from '../../DB/base.repository';
-import { BadRequestException, NotFoundException } from '../../utils/response/exception.response';
-import { Id } from '../../utils/types/shared.type';
-import { IQueryDTO } from '../../utils/validation/general-fields.validation';
+import { BadRequestException, NotFoundException } from '../../shared/response/exception.response';
+import { Id } from '../../shared/types/validation.type';
+import { IQueryDTO } from '../../shared/validation/general-fields.validation';
 import { UserRepository } from '../user/user.repository';
-import { FriendRequestStatusEnum } from './friendship.enums';
-import Friendship from './friendship.model';
-import { IFriendship, IUserLeanResult } from './friendship.types';
+import { FriendRequestStatusEnum } from './friend.enums';
+import Friend from './friend.model';
+import { IFriend, IUserLeanResult } from './friend.types';
 
-class FriendshipServices {
+class FriendServices {
 	constructor(
-		private readonly FriendRepo = new GenericRepository<IFriendship>(Friendship),
+		private readonly FriendRepo = new GenericRepository<IFriend>(Friend),
 		private readonly UserRepo = new UserRepository(),
 	) {}
 
-	async getReceivedRequests(userId: Id, { page = 1, limit = 10 }: IQueryDTO): Promise<IPaginatedResult<IFriendship[]>> {
+	async getReceivedRequests(userId: Id, { page = 1, limit = 10 }: IQueryDTO): Promise<IPaginatedResult<IFriend[]>> {
 		const requests = await this.FriendRepo.find({ sendTo: userId, status: FriendRequestStatusEnum.PENDING })
 			.lean()
 			.paginate(page, limit)
@@ -22,7 +22,7 @@ class FriendshipServices {
 		return requests;
 	}
 
-	async getSentRequests(userId: Id, { page = 1, limit = 10 }: IQueryDTO): Promise<IPaginatedResult<IFriendship[]>> {
+	async getSentRequests(userId: Id, { page = 1, limit = 10 }: IQueryDTO): Promise<IPaginatedResult<IFriend[]>> {
 		const requests = await this.FriendRepo.find({ sendBy: userId, status: FriendRequestStatusEnum.PENDING })
 			.lean()
 			.populate({ path: 'sendTo', select: 'firstName lastName avatar gender' })
@@ -31,7 +31,7 @@ class FriendshipServices {
 		return requests;
 	}
 
-	async sendFriendRequest(userId: Id, targetUserId: Id): Promise<IFriendship> {
+	async sendFriendRequest(userId: Id, targetUserId: Id): Promise<IFriend> {
 		// Prevent sending a request to self
 		if (userId.toString() === targetUserId.toString()) {
 			throw new BadRequestException('You cannot send a friend request to yourself', 'sendFriendRequest');
@@ -223,4 +223,4 @@ class FriendshipServices {
 	}
 }
 
-export default new FriendshipServices();
+export default new FriendServices();

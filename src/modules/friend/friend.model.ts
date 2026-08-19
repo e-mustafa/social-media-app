@@ -1,8 +1,8 @@
 import { model, Model, Schema } from 'mongoose';
-import { FriendRequestStatusEnum } from './friendship.enums';
-import { IFriendship } from './friendship.types';
+import { FriendRequestStatusEnum } from './friend.enums';
+import { IFriend } from './friend.types';
 
-const friendshipSchema = new Schema<IFriendship>(
+const friendSchema = new Schema<IFriend>(
 	{
 		sendBy: {
 			type: Schema.Types.ObjectId,
@@ -25,6 +25,6 @@ const friendshipSchema = new Schema<IFriendship>(
 	},
 );
 
-const Friendship: Model<IFriendship> = model('Friendship', friendshipSchema);
+const Friend: Model<IFriend> = model('Friend', friendSchema);
 
-export default Friendship;
+export default Friend;
