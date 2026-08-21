@@ -1,20 +1,19 @@
-import { GenericRepository, IPaginatedResult } from '../../DB/base.repository';
+import { sortOrderEnum } from '../../shared/enums/query.enum';
 import { BadRequestException, NotFoundException } from '../../shared/response/exception.response';
-import { Id } from '../../shared/types/validation.type';
+import { Id, IPaginatedResult } from '../../shared/types';
 import { IQueryDTO } from '../../shared/validation/general-fields.validation';
-import { Block } from '../block/block.model';
-import { IBlock } from '../block/block.types';
-import { UserRepository } from '../user/user.repository';
+import { blockRepository } from '../block';
+import { userRepository } from '../user';
 import { IUser } from '../user/user.types';
 import { FriendRequestStatusEnum } from './friend.enums';
-import Friend from './friend.model';
+import friendRepository from './friend.repository';
 import { IFriend } from './friend.types';
 
 class FriendServices {
 	constructor(
-		private readonly FriendRepo: GenericRepository<IFriend> = new GenericRepository<IFriend>(Friend),
-		private readonly UserRepo: UserRepository = new UserRepository(),
-		private readonly BlockRepo: GenericRepository<IBlock> = new GenericRepository<IBlock>(Block),
+		private readonly FriendRepo = friendRepository,
+		private readonly UserRepo = userRepository,
+		private readonly BlockRepo = blockRepository,
 	) {}
 
 	async sendFriendRequest(userId: Id, targetUserId: Id): Promise<IFriend> {
@@ -97,30 +96,33 @@ class FriendServices {
 		return request;
 	}
 
-	async getMyFriends(userId: Id, { page = 1, limit = 10 }: IQueryDTO) {
+	async getMyFriends(userId: Id, { page = 1, limit = 10, order }: IQueryDTO) {
 		const friends = await this.FriendRepo.find({
 			$or: [{ sendBy: userId }, { sendTo: userId }],
 			status: FriendRequestStatusEnum.ACCEPTED,
 		})
 			.lean()
+			.sort({ createdAt: order === sortOrderEnum.ASC ? 1 : -1 })
 			.populate<IFriend & { sendBy: Partial<IUser> }>({ path: 'sendBy', select: 'firstName lastName avatar gender' })
 			.paginate(page, limit)
 			.exec();
 		return friends;
 	}
 
-	async getReceivedRequests(userId: Id, { page = 1, limit = 10 }: IQueryDTO): Promise<IPaginatedResult<IFriend[]>> {
+	async getReceivedRequests(userId: Id, { page = 1, limit = 10, order }: IQueryDTO): Promise<IPaginatedResult<IFriend>> {
 		const requests = await this.FriendRepo.find({ sendTo: userId, status: FriendRequestStatusEnum.PENDING })
 			.lean()
+			.sort({ createdAt: order === sortOrderEnum.ASC ? 1 : -1 })
 			.populate<IFriend & { sendBy: Partial<IUser> }>({ path: 'sendBy', select: 'firstName lastName avatar gender' })
 			.paginate(page, limit)
 			.exec();
 		return requests;
 	}
 
-	async getSentRequests(userId: Id, { page = 1, limit = 10 }: IQueryDTO): Promise<IPaginatedResult<IFriend[]>> {
+	async getSentRequests(userId: Id, { page = 1, limit = 10, order }: IQueryDTO): Promise<IPaginatedResult<IFriend>> {
 		const requests = await this.FriendRepo.find({ sendBy: userId, status: FriendRequestStatusEnum.PENDING })
 			.lean()
+			.sort({ createdAt: order === sortOrderEnum.ASC ? 1 : -1 })
 			.populate<IFriend & { sendTo: Partial<IUser> }>({ path: 'sendTo', select: 'firstName lastName avatar gender' })
 			.paginate(page, limit)
 			.exec();
