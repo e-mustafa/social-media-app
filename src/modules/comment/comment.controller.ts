@@ -1,12 +1,13 @@
 import { Request, Response } from 'express';
 import { successResponse } from '../../shared/response/success.response';
-import { Id, IFile } from '../../shared/types';
+import { Id, IFile, IUserBody } from '../../shared/types';
 import { IQueryDTO } from '../../shared/validation/general-fields.validation';
+import { IUser } from '../user';
 import services from './comment.service';
 
 export async function createComment(req: Request, res: Response) {
 	const { user, body, params, files } = req || {};
-	const data = await services.createComment(user?._id as Id, params.postId as string, body, files as IFile[]);
+	const data = await services.createComment(user as IUserBody, params.postId as string, body, files as IFile[]);
 	successResponse({ res, status: 201, message: 'Comment created successfully', data });
 }
 
@@ -44,7 +45,7 @@ export async function getCommentReplies(req: Request, res: Response) {
 
 export async function createReply(req: Request, res: Response) {
 	const { user, body, params, files } = req || {};
-	const data = await services.createReply(user?._id as Id, params.commentId as string, body, files as IFile[]);
+	const data = await services.createReply(user as IUser, params.commentId as string, body, files as IFile[]);
 	successResponse({ res, status: 201, message: 'Reply created successfully', data });
 }
 

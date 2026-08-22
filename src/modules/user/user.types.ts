@@ -35,6 +35,9 @@ export interface IUser {
 	statusReason?: TStatusReason;
 	statusChangedAt?: Date;
 
+	deviceTokens?: string[];
+	notificationEnabled?: boolean;
+
 	deletedAt?: Date;
 
 	// Lists -----------

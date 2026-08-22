@@ -2,7 +2,8 @@ import { QueryFilter, Types } from 'mongoose';
 import { isDev } from '../../config/env.config';
 import { sortOrderEnum } from '../../shared/enums/query.enum';
 import { BadRequestException, NotFoundException } from '../../shared/response/exception.response';
-import { Id, IFile, IPaginatedResult, TAttachment } from '../../shared/types';
+import { Id, IFile, IPaginatedResult, IUserBody, TAttachment } from '../../shared/types';
+import notifyEvents from '../../utils/events/notification.events';
 import { deleteMultipleFromCloudinary, uploadPostAttachments } from '../../utils/upload-files/cloudinary';
 import blockRepository, { BlockRepository } from '../block/block.repository';
 import { commentServices } from '../comment';
@@ -140,12 +141,12 @@ class PostServices {
 		return post;
 	}
 
-	async createPost(userId: Id, body: ICreatePostDTO, files: IFile[]) {
+	async createPost(user: IUserBody, body: ICreatePostDTO, files: IFile[]) {
 		const { content, isPublished, visibility, taggedUsers } = body;
 
 		// 1. Convert all tagged user IDs to string and remove duplicates
 		const taggedUsersSet = Array.from(new Set(taggedUsers?.map((id) => id.toString()) || []));
-		const userIdStr = userId.toString();
+		const userIdStr = user._id.toString();
 
 		// 2. Prevent self-tagging with correct string interpolation
 		if (taggedUsersSet && taggedUsersSet.length) {
@@ -158,7 +159,7 @@ class PostServices {
 		}
 
 		// 3. Fetch all blocked user IDs (both directions: blocked by me or blocked me)
-		const blockedIds = await this.BlockRepo.getBlockedUsersIds(userId);
+		const blockedIds = await this.BlockRepo.getBlockedUsersIds(userIdStr);
 		const blockedIdsSet = new Set(blockedIds?.map((id) => id.toString()) || []);
 		// 4. Filter out blocked users from taggedUsers
 		const validTaggedUsers = taggedUsersSet.filter((id) => !blockedIdsSet.has(id));
@@ -169,7 +170,7 @@ class PostServices {
 		try {
 			// 5. upload attachments
 			if (files && files?.length > 0) {
-				const uploadResults = await uploadPostAttachments(files, userId, postId.toString());
+				const uploadResults = await uploadPostAttachments(files, userIdStr, postId.toString());
 				attachments = uploadResults?.map((file) => ({
 					id: file.id,
 					url: file.url,
@@ -181,18 +182,23 @@ class PostServices {
 			const post = await this.PostRepo.create({
 				_id: postId,
 				content,
-				author: userId,
+				author: userIdStr,
 				attachments,
 				isPublished,
 				visibility,
 				taggedUsers: validTaggedUsers || [],
 			});
-			// TODO: Trigger async background notifications for validTaggedUsers
+
+			// 7. notify tagged users
+			validTaggedUsers.forEach((id) => {
+				if (id.toString() !== userIdStr) {
+					notifyEvents.emit('post-tagged', { to: id, sender: user, postId, content });
+				}
+			});
 
 			return post;
 		} catch (error) {
 			if (attachments.length > 0) await deleteMultipleFromCloudinary(attachments);
-
 			throw error;
 		}
 	}

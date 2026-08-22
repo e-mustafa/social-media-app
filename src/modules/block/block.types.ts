@@ -1,5 +1,5 @@
 import { HydratedDocument } from 'mongoose';
-import { Id } from '../../shared/types/validation.type';
+import { Id } from '../../shared/types';
 
 export interface IBlock extends Document {
 	blocker: Id;

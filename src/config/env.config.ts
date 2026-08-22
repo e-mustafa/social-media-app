@@ -60,3 +60,5 @@ export const ENVcloudinaryConfig = {
 	apiKey: process.env.CLOUDINARY_API_KEY || '',
 	secret: process.env.CLOUDINARY_API_SECRET || '',
 };
+
+export const ENVFirebaseAccountFile = process.env.FIREBASE_SERVICE_ACCOUNT || '';

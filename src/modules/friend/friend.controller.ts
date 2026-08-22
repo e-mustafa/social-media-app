@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { successResponse } from '../../shared/response/success.response';
-import { Id } from '../../shared/types';
+import { Id, IUserBody } from '../../shared/types';
 import { IQueryDTO } from '../../shared/validation/general-fields.validation';
 import services from './friend.service';
 
@@ -16,7 +16,7 @@ export async function getSentRequests(req: Request, res: Response) {
 
 export async function sendFriendRequest(req: Request, res: Response) {
 	const { user, params } = req || {};
-	await services.sendFriendRequest(user?._id as Id, params.id as Id);
+	await services.sendFriendRequest(user as IUserBody, params.id as Id);
 	successResponse({ res, message: 'Friend request sent successfully' });
 }
 
@@ -28,7 +28,7 @@ export async function deleteFriendRequest(req: Request, res: Response) {
 
 export async function acceptFriendRequest(req: Request, res: Response) {
 	const { user, params } = req || {};
-	const data = await services.acceptFriendRequest(user?._id as Id, params.id as Id);
+	const data = await services.acceptFriendRequest(user as IUserBody, params.id as Id);
 	successResponse({ res, status: 201, message: 'You are Friend now', data });
 }
 

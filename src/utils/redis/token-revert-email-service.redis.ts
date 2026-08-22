@@ -1,5 +1,5 @@
 import { appConfig } from '../../config/app.config';
-import { Id } from '../../shared/types/validation.type';
+import { Id } from '../../shared/types';
 import { redisDB } from './client.redis';
 
 export const revertEmailTokenServices = {

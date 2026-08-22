@@ -117,6 +117,12 @@ const userSchema = new Schema<IUser>(
 		// 	type: Schema.Types.ObjectId,
 		// 	ref: 'User',
 		// },
+		
+		deviceTokens: [String],
+		notificationEnabled: {
+			type: Boolean,
+			default: true,
+		},
 
 		status: {
 			type: String,

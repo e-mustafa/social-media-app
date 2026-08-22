@@ -1,11 +1,12 @@
 import { sortOrderEnum } from '../../shared/enums/query.enum';
 import { BadRequestException, NotFoundException } from '../../shared/response/exception.response';
-import { Id, IPaginatedResult } from '../../shared/types';
+import { Id, IPaginatedResult, IUserBody } from '../../shared/types';
 import { IQueryDTO } from '../../shared/validation/general-fields.validation';
+import notifyEvents from '../../utils/events/notification.events';
 import { blockRepository } from '../block';
-import { userRepository } from '../user';
+import { selectGeneralUserInfo, userRepository } from '../user';
 import { IUser } from '../user/user.types';
-import { FriendRequestStatusEnum } from './friend.enums';
+import { FriendRequestStatusEnum } from './friend.enum';
 import friendRepository from './friend.repository';
 import { IFriend } from './friend.types';
 
@@ -16,17 +17,17 @@ class FriendServices {
 		private readonly BlockRepo = blockRepository,
 	) {}
 
-	async sendFriendRequest(userId: Id, targetUserId: Id): Promise<IFriend> {
+	async sendFriendRequest(user: IUserBody, targetUserId: Id): Promise<IFriend> {
 		// Prevent sending a request to self
-		if (userId.toString() === targetUserId.toString()) {
+		if (user._id.toString() === targetUserId.toString()) {
 			throw new BadRequestException('You cannot send a friend request to yourself', 'sendFriendRequest');
 		}
 
-		// todo: add isFriends in friend repo
+		const userId = user._id;
 
 		// Fetch existing request and target/current user block/friend status in parallel
 		const [targetUser, isBlocked, existRequest] = await Promise.all([
-			this.UserRepo.findById(targetUserId).select('').lean().exec(),
+			this.UserRepo.findById(targetUserId).select(selectGeneralUserInfo).lean().exec(),
 
 			this.BlockRepo.findOne({
 				$or: [
@@ -93,6 +94,10 @@ class FriendServices {
 
 		// Create and return the new friend request
 		const request = await this.FriendRepo.create({ sendBy: userId, sendTo: targetUserId });
+
+		// Notify the target user of the friend request
+		notifyEvents.emit('friend-request', { to: targetUserId, sender: user, requestId: request._id });
+
 		return request;
 	}
 
@@ -153,7 +158,7 @@ class FriendServices {
 		return;
 	}
 
-	async acceptFriendRequest(userId: Id, reqId: Id) {
+	async acceptFriendRequest(user: IUserBody, reqId: Id) {
 		// 1. Fetch friend request
 		const request = await this.FriendRepo.findById(reqId).lean().exec();
 		if (!request) {
@@ -161,7 +166,7 @@ class FriendServices {
 		}
 
 		// 2. Validate user authorization
-		if (userId.toString() !== request.sendTo.toString()) {
+		if (user._id.toString() !== request.sendTo.toString()) {
 			throw new BadRequestException('You are not authorized to accept this friend request', 'acceptFriendRequest');
 		}
 
@@ -174,6 +179,9 @@ class FriendServices {
 		const updated = await this.FriendRepo.findByIdAndUpdate(reqId, { status: FriendRequestStatusEnum.ACCEPTED })
 			.lean()
 			.exec();
+
+		// 5. Notify the sender of the friend request
+		notifyEvents.emit('request-accepted', { to: request.sendBy, sender: user });
 
 		return updated;
 	}

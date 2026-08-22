@@ -1,5 +1,5 @@
 import { appConfig } from '../../config/app.config';
-import { ObjId } from '../../shared/types/validation.type';
+import { ObjId } from '../../shared/types';
 import { redisDB } from './client.redis';
 
 export const changeEmailOtpServices = {

@@ -1,6 +1,6 @@
 import { HydratedDocument } from 'mongoose';
-import { Id } from '../../shared/types/validation.type';
-import { TFriendRequestStatus } from './friend.enums';
+import { Id } from '../../shared/types';
+import { TFriendRequestStatus } from './friend.enum';
 
 export interface IFriend {
 	_id: Id;

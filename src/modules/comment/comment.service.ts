@@ -1,21 +1,22 @@
 import { Types } from 'mongoose';
 import { NotFoundException, UnAuthorizedException } from '../../shared/response/exception.response';
-import { Id, IFile, IPaginatedResult, TAttachment } from '../../shared/types';
+import { Id, IFile, IPaginatedResult, IUserBody, TAttachment } from '../../shared/types';
 import { IQueryDTO } from '../../shared/validation/general-fields.validation';
+import notifyEvents from '../../utils/events/notification.events';
 import { deleteMultipleFromCloudinary, uploadCommentAttachments } from '../../utils/upload-files/cloudinary';
 import { blockRepository } from '../block';
 import { friendRepository } from '../friend';
 import { IPost, IPostWUsers, postRepository } from '../post';
 import { reactionRepository } from '../reaction';
 import { TargetTypeEnum } from '../reaction/reaction.enum';
-import { userRepository } from '../user';
+import { IUser, userRepository } from '../user';
 import { selectGeneralUserInfo } from '../user/user.service';
 import commentRepository from './comment.repository';
 import { IComment, ICommentWAuthor } from './comment.types';
 import { ICreateCommentDTO, ICreateReplyDTO, IUpdateCommentDTO } from './comment.validation';
 
 type createCommentOrReplyProps = {
-	userId: Id;
+	user: IUserBody;
 	post: IPost;
 	parentComment: IComment | null;
 	body: ICreateReplyDTO;
@@ -37,7 +38,7 @@ class CommentServices {
 	 * DO NOT call this directly from controllers.
 	 */
 	private async _executeCommentCreation({
-		userId,
+		user,
 		post,
 		parentComment,
 		body,
@@ -48,7 +49,7 @@ class CommentServices {
 		let attachments: TAttachment[] = [];
 
 		const postId = post._id.toString();
-		const userIdStr = userId.toString();
+		const userIdStr = user._id.toString();
 		const parentId = parentComment?._id.toString() || null;
 
 		// 1. Upload attachments to Cloudinary if files exist
@@ -67,7 +68,7 @@ class CommentServices {
 			_id: commentId,
 			content,
 			parentId: parentId,
-			author: userId,
+			author: user._id,
 			postId,
 			attachments,
 			taggedUsers: taggedUsers || [],
@@ -86,15 +87,19 @@ class CommentServices {
 
 		// 4. Handle notifications dispatch logic
 		if (!parentId && userIdStr !== post.author.toString()) {
-			// todo: send notification to post author
+			notifyEvents.emit('post-comment', { to: post.author, sender: user, postId, commentId, content });
 		}
 
 		if (parentId && parentComment && userIdStr !== parentComment.author.toString()) {
-			// todo: send notification to parent comment author
+			notifyEvents.emit('comment-reply', { to: parentComment.author, sender: user, content, replyId: commentId });
 		}
 
 		if (taggedUsers?.length) {
-			// todo: send tag in post notification
+			taggedUsers.forEach((id) => {
+				if (id.toString() !== userIdStr) {
+					notifyEvents.emit('comment-tagged', { to: id, sender: user, postId, content });
+				}
+			});
 		}
 
 		return comment;
@@ -103,9 +108,9 @@ class CommentServices {
 	/**
 	 * Creates a top-level comment on a post.
 	 */
-	async createComment(userId: Id, postId: string, body: ICreateCommentDTO, files: IFile[]): Promise<IComment> {
+	async createComment(user: IUserBody, postId: string, body: ICreateCommentDTO, files: IFile[]): Promise<IComment> {
 		// 1. Verify post access permissions
-		const { post, blockedIds } = await this.PostRepo.postWValidateAccess(userId, postId);
+		const { post, blockedIds } = await this.PostRepo.postWValidateAccess(user._id, postId);
 
 		if (!post) {
 			throw new NotFoundException('Post not found', 'CommentServices.createComment');
@@ -113,7 +118,7 @@ class CommentServices {
 
 		// 2. Prevent self-tagging and filter out blocked users from taggedUsers
 		const taggedUsersSet = Array.from(new Set(body?.taggedUsers?.map((id) => id.toString()) || []));
-		const userIdStr = userId.toString();
+		const userIdStr = user._id.toString();
 
 		const blockedIdsSet = new Set(blockedIds?.map((id) => id.toString()) || []);
 		// Filter out blocked users from taggedUsers
@@ -123,19 +128,19 @@ class CommentServices {
 		body.taggedUsers = validTaggedUsers;
 
 		// 3. Delegate to shared creation logic with no parent comment
-		return this._executeCommentCreation({ userId, post, parentComment: null, body, files });
+		return this._executeCommentCreation({ user, post, parentComment: null, body, files });
 	}
 
 	/**
 	 * Creates a reply to an existing comment.
 	 */
-	async createReply(userId: Id, parentId: string, body: ICreateReplyDTO, files: IFile[]): Promise<IComment> {
+	async createReply(user: IUser, parentId: string, body: ICreateReplyDTO, files: IFile[]): Promise<IComment> {
 		// 1. Convert all tagged user IDs to string and remove duplicates
 		const taggedUsersSet = Array.from(new Set(body?.taggedUsers?.map((id) => id.toString()) || []));
-		const userIdStr = userId.toString();
+		const userIdStr = user._id.toString();
 
 		// 3. Fetch all blocked user IDs (both directions: blocked by me or blocked me)
-		const blockedIds = await this.BlockRepo.getBlockedUsersIds(userId);
+		const blockedIds = await this.BlockRepo.getBlockedUsersIds(userIdStr);
 		const blockedIdsSet = new Set(blockedIds?.map((id) => id.toString()) || []);
 		// 4. Filter out blocked users from taggedUsers
 		const validTaggedUsers = taggedUsersSet.filter((id) => !blockedIdsSet.has(id) || id === userIdStr);
@@ -155,13 +160,13 @@ class CommentServices {
 		}
 
 		// 3. Validate post access using the parent comment's postId
-		const { post } = await this.PostRepo.postWValidateAccess(userId, parentComment.postId.toString());
+		const { post } = await this.PostRepo.postWValidateAccess(userIdStr, parentComment.postId.toString());
 		if (!post) {
 			throw new NotFoundException('Post not found', 'CommentServices.createReply');
 		}
 
 		// 3. Delegate to shared creation logic
-		return this._executeCommentCreation({ userId, post, parentComment, body, files });
+		return this._executeCommentCreation({ user, post, parentComment, body, files });
 	}
 
 	/**

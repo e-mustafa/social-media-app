@@ -1,7 +1,7 @@
 import { QueryFilter } from 'mongoose';
-import { GenericRepository, IPaginatedResult } from '../../DB/base.repository';
+import { GenericRepository } from '../../DB/base.repository';
 import { BadRequestException, NotFoundException } from '../../shared/response/exception.response';
-import { Id, IFile } from '../../shared/types/validation.type';
+import { Id, IFile, IPaginatedResult } from '../../shared/types';
 import { IQueryDTO } from '../../shared/validation/general-fields.validation';
 import { encrypt } from '../../utils/security/encryption.security';
 import cloudinary, { uploadUserProfileMedia } from '../../utils/upload-files/cloudinary';
@@ -110,7 +110,7 @@ class UserServices {
 		return targetUser;
 	}
 
-	async getUsers(userId: Id, { page = 1, limit = 10, search }: IQueryDTO): Promise<IPaginatedResult<IGeneralUser[]>> {
+	async getUsers(userId: Id, { page = 1, limit = 10, search }: IQueryDTO): Promise<IPaginatedResult<IGeneralUser>> {
 		// 1. Query block records to find all bidirectional block relationships
 		const blocks = await this.BlockRepo.find({
 			$or: [{ blocker: userId }, { blocked: userId }],

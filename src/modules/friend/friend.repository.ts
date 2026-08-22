@@ -1,6 +1,6 @@
 import { BaseRepository, IQueryOptions } from '../../DB/base.repository';
 import { Id } from '../../shared/types';
-import { FriendRequestStatusEnum } from './friend.enums';
+import { FriendRequestStatusEnum } from './friend.enum';
 import Friend from './friend.model';
 import { IFriend } from './friend.types';
 

@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { appConfig } from '../../config/app.config';
 import { successResponse } from '../../shared/response/success.response';
-import { Id } from '../../shared/types/validation.type';
+import { Id } from '../../shared/types';
 import { removeCookiesTokens, setCookies } from '../../utils/security/set-cookies.security';
 import { ProviderEnum } from '../user/user.enums';
 import services from './auth.service';
@@ -79,7 +79,7 @@ export const resetPassword = async (req: Request, res: Response) => {
 
 export async function changePassword(req: Request, res: Response) {
 	const { currentPassword, newPassword, confirmNewPassword }: IChangePasswordDTO = req.body || {};
-	const data = await services.changePassword(req.user._id, { currentPassword, newPassword, confirmNewPassword });
+	const data = await services.changePassword(req.user?._id as Id, { currentPassword, newPassword, confirmNewPassword });
 
 	if (data && appConfig.auth.changePassword_logoutAll) {
 		// logout all sessions
@@ -106,12 +106,12 @@ export const logoutAll = async (req: Request, res: Response) => {
 };
 
 export const getThisSession = async (req: Request, res: Response) => {
-	const data = await services.getThisSession(req.user._id, req.cookies.refreshToken);
+	const data = await services.getThisSession(req.user?._id as Id, req.cookies.refreshToken);
 	successResponse({ res, data });
 };
 
 export const getMySessions = async (req: Request, res: Response) => {
-	const data = await services.getMySessions(req.user._id, req.cookies.refreshToken);
+	const data = await services.getMySessions(req.user?._id as Id, req.cookies.refreshToken);
 	successResponse({ res, data });
 };
 
@@ -127,7 +127,7 @@ export const removeSession = async (req: Request, res: Response) => {
 };
 
 export async function deactivateMyAccount(req: Request, res: Response) {
-	const data = await services.deactivateMyAccount(req.user._id as Id, req.cookies.refreshToken);
+	const data = await services.deactivateMyAccount(req.user?._id as Id, req.cookies.refreshToken);
 	// remove cookies
 	removeCookiesTokens(res);
 	successResponse({ res, message: 'Account deactivated successfully', data });

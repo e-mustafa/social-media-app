@@ -3,7 +3,7 @@ import streamifier from 'streamifier';
 
 import { ENVcloudinaryConfig } from '../../config/env.config';
 import { InternalException } from '../../shared/response/exception.response';
-import { Id, IFile } from '../../shared/types/validation.type';
+import { Id, IFile } from '../../shared/types';
 
 // -----------------------------------------------------------------------------
 // Cloudinary Configuration

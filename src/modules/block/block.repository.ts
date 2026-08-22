@@ -1,5 +1,5 @@
 import { BaseRepository, IQueryOptions } from '../../DB/base.repository';
-import { Id } from '../../shared/types/validation.type';
+import { Id } from '../../shared/types';
 import { Block } from './block.model';
 import { IBlock } from './block.types';
 

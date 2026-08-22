@@ -1,7 +1,8 @@
 import { QueryFilter } from 'mongoose';
 import { IDeleteResult } from '../../DB/base.repository';
 import { ConflictException, NotFoundException } from '../../shared/response/exception.response';
-import { Id } from '../../shared/types';
+import { Id, IUserBody } from '../../shared/types';
+import notifyEvents from '../../utils/events/notification.events';
 import { blockRepository } from '../block';
 import commentRepository from '../comment/comment.repository';
 import { IComment } from '../comment/comment.types';
@@ -22,7 +23,7 @@ type IGetReactionsDTO = {
 };
 
 type IAddReactionDTO = {
-	userId: Id;
+	user: IUserBody;
 	targetId: string;
 	targetType: TTargetType;
 	reactionType: TReactionType;
@@ -31,7 +32,6 @@ type IAddReactionDTO = {
 class ReactionServices {
 	constructor(
 		private readonly ReactionRepo = reactionRepository,
-		// private readonly CommentRepo = new CommentRepository(),
 		private readonly CommentRepo = commentRepository,
 		private readonly BlockRepo = blockRepository,
 		private readonly PostRepo = postRepository,
@@ -88,14 +88,9 @@ class ReactionServices {
 		};
 	}
 
-	async addReaction({ userId, targetId, targetType, reactionType }: IAddReactionDTO): Promise<IReaction> {
+	async addReaction({ user, targetId, targetType, reactionType }: IAddReactionDTO): Promise<IReaction> {
 		const model: typeof this.PostRepo | typeof this.CommentRepo =
 			targetType === TargetTypeEnum.POST ? this.PostRepo : this.CommentRepo;
-
-		console.log('CommentRepo', this.CommentRepo);
-		console.log('model', model);
-		console.log('this.CommentRepo', this.CommentRepo);
-		console.log('targetType', targetType === TargetTypeEnum.POST);
 
 		// 1. Fetch target document
 		// const target = await model.findById(targetId).exec();
@@ -107,6 +102,7 @@ class ReactionServices {
 		// 2. Resolve parent post and validate blocking
 		let parentPost: IPost | IComment;
 		const targetAuthorId = target.author.toString();
+		const userId = user._id.toString();
 
 		// Check block between current user and target author
 		const isTargetAuthorBlocked = await this.BlockRepo.isBlocked(userId, targetAuthorId);
@@ -182,6 +178,16 @@ class ReactionServices {
 				$inc: { reactionsCount: 1 },
 			})
 			.exec();
+
+		// 7. Emit notification event
+		notifyEvents.emit(targetType === TargetTypeEnum.POST ? 'post-react' : 'comment-react', {
+			to: targetAuthorId,
+			sender: user,
+			reactionId: reaction._id,
+			...(targetType === TargetTypeEnum.POST ? { postId: targetId } : { commentId: targetId }),
+			reactionType,
+			postId: parentPost._id,
+		});
 
 		return reaction;
 	}

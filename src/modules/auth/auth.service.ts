@@ -13,7 +13,7 @@ import {
 	UnAuthorizedException,
 	ValidationErrorsException,
 } from '../../shared/response/exception.response';
-import { Id } from '../../shared/types/validation.type';
+import { Id } from '../../shared/types';
 import emailEvents from '../../utils/events/email.events';
 import { reactiveAccountServices } from '../../utils/redis/reactivate-account-otp-service.redis';
 import { redisRefreshToken } from '../../utils/redis/refresh-token.redis';
@@ -510,7 +510,7 @@ class AuthServices {
 		return { ...session, active: true } as ISessionResponse;
 	}
 
-	public async getMySessions(userId: string, refreshToken: string): Promise<ISessionResponse[]> {
+	public async getMySessions(userId: Id, refreshToken: string): Promise<ISessionResponse[]> {
 		const payload = decodeToken(refreshToken, true);
 		if (!payload || !payload.id || !payload.jti) {
 			throw new NotFoundException('Invalid refresh token', 'getSessions');
