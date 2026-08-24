@@ -97,7 +97,7 @@ class AuthServices {
 		await setRedisVerifyAccount(user.email, hashOtp(otp));
 
 		// 5. Dispatch account verification email event
-		emailEvents.emit('verify-account', user.email, user.firstName || '', otp);
+		emailEvents.emitAsync('verify-account', { email: user.email, name: user.firstName || '', otp });
 
 		return true;
 	}
@@ -145,7 +145,7 @@ class AuthServices {
 		await setRedisVerifyAccount(userEmail, hashOtp(otp));
 
 		// 5. Dispatch email event
-		emailEvents.emit('verify-account', userEmail, user.firstName || '', otp);
+		emailEvents.emitAsync('verify-account', { email: userEmail, name: user.firstName || '', otp });
 
 		return true;
 	}
@@ -389,7 +389,7 @@ class AuthServices {
 		const resetUrl = url.href;
 
 		// send reset password email
-		emailEvents.emit('reset-password', email, user.firstName, resetUrl);
+		emailEvents.emitAsync('reset-password', { email, name: user.firstName || '', resetLink: resetUrl });
 	}
 
 	async resetPassword({ token, password, confirmPassword }: IResetPasswordDTO) {
