@@ -87,17 +87,23 @@ class CommentServices {
 
 		// 4. Handle notifications dispatch logic
 		if (!parentId && userIdStr !== post.author.toString()) {
-			notifyEvents.emit('post-comment', { to: post.author, sender: user, postId, commentId, content });
+			notifyEvents.emitAsync('post-comment', { to: post.author, sender: user, postId, commentId, content });
 		}
 
 		if (parentId && parentComment && userIdStr !== parentComment.author.toString()) {
-			notifyEvents.emit('comment-reply', { to: parentComment.author, sender: user, content, replyId: commentId });
+			notifyEvents.emitAsync('comment-reply', {
+				to: parentComment.author,
+				sender: user,
+				commentId: parentComment._id,
+				replyId: commentId,
+				content,
+			});
 		}
 
 		if (taggedUsers?.length) {
 			taggedUsers.forEach((id) => {
 				if (id.toString() !== userIdStr) {
-					notifyEvents.emit('comment-tagged', { to: id, sender: user, postId, content });
+					notifyEvents.emitAsync('comment-tagged', { to: id, sender: user, postId, commentId, content });
 				}
 			});
 		}

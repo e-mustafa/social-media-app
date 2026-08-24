@@ -192,7 +192,7 @@ class PostServices {
 			// 7. notify tagged users
 			validTaggedUsers.forEach((id) => {
 				if (id.toString() !== userIdStr) {
-					notifyEvents.emit('post-tagged', { to: id, sender: user, postId, content });
+					notifyEvents.emitAsync('post-tagged', { to: id, sender: user, postId, content });
 				}
 			});
 

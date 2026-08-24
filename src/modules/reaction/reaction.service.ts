@@ -180,7 +180,7 @@ class ReactionServices {
 			.exec();
 
 		// 7. Emit notification event
-		notifyEvents.emit(targetType === TargetTypeEnum.POST ? 'post-react' : 'comment-react', {
+		notifyEvents.emitAsync(targetType === TargetTypeEnum.POST ? 'post-react' : 'comment-react', {
 			to: targetAuthorId,
 			sender: user,
 			reactionId: reaction._id,

@@ -96,7 +96,7 @@ class FriendServices {
 		const request = await this.FriendRepo.create({ sendBy: userId, sendTo: targetUserId });
 
 		// Notify the target user of the friend request
-		notifyEvents.emit('friend-request', { to: targetUserId, sender: user, requestId: request._id });
+		notifyEvents.emitAsync('friend-request', { to: targetUserId, sender: user, requestId: request._id });
 
 		return request;
 	}
@@ -181,7 +181,7 @@ class FriendServices {
 			.exec();
 
 		// 5. Notify the sender of the friend request
-		notifyEvents.emit('request-accepted', { to: request.sendBy, sender: user });
+		notifyEvents.emitAsync('friend-accepted', { to: request.sendBy, sender: user, requestId: reqId });
 
 		return updated;
 	}

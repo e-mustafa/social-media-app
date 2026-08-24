@@ -17,6 +17,8 @@ import {
 	commentRoutes,
 	friendRouter,
 	friendRoutes,
+	notificationRouter,
+	notificationRoutes,
 	postRouter,
 	postRoutes,
 	userRouter,
@@ -52,6 +54,7 @@ export const bootstrap = async (app: Express): Promise<void> => {
 	app.use(`${apiBaseUrl}${postRoutes.base}`, postRouter);
 	app.use(`${apiBaseUrl}${commentRoutes.base}`, commentRouter);
 	app.use(`${apiBaseUrl}${reactionRoutes.base}`, reactionRouter);
+	app.use(`${apiBaseUrl}${notificationRoutes.base}`, notificationRouter);
 	// routes --------------------------------------------------------
 
 	// handle not found routes

@@ -68,6 +68,11 @@ export const appConfig = {
 		defaultOrder: sortOrderEnum.DESC,
 		defaultLimit: 10,
 	},
+
+	notification: {
+		defaultOrder: sortOrderEnum.DESC,
+		defaultLimit: 10,
+	},
 	// messages: {
 	// 	maxMessageLength: 1000,
 	// 	maxAttachmentsPerMessage: 4,

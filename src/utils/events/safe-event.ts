@@ -1,26 +1,29 @@
 import EventEmitter from 'node:events';
 
-export default class SafeEventEmitter extends EventEmitter {
+// SafeEventEmitter typed class
+export class TypedSafeEventEmitter<TEventMap extends Record<string, any>> extends EventEmitter {
 	constructor() {
 		super();
+		// Catch unhandled errors in async events
 		this.on('error', (err) => {
 			console.error('❌ [SafeEventEmitter Error]:', err);
 		});
 	}
 
-	onAsync(event: string, callback: (...args: any[]) => Promise<void>) {
-		return this.on(event, async (...args: any[]) => {
+	// Fully-typed onAsync method
+	onAsync<K extends keyof TEventMap & string>(event: K, callback: (payload: TEventMap[K]) => Promise<void>) {
+		return this.on(event, async (payload: TEventMap[K]) => {
 			try {
-				await callback(...args);
+				await callback(payload);
 			} catch (error) {
-				console.error(`${event}:error`, error);
+				console.error(`[Event Error] -> ${event}:`, error);
 				this.emit('error', error);
 			}
 		});
 	}
+
+	// Fully-typed emit method
+	emitAsync<K extends keyof TEventMap & string>(event: K, payload: TEventMap[K]): boolean {
+		return this.emit(event, payload);
+	}
 }
-
-// todo: add logging for all events
-// todo: add generic type for all events
-
-

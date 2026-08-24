@@ -2,21 +2,34 @@ import { NotificationTypeEnum } from '../../modules/notification/notification.en
 import { TReactionType } from '../../modules/reaction/reaction.enum';
 import { Id, ObjId } from '../../shared/types';
 import { sendNotification } from '../firebase/push.service';
-import SafeEventEmitter from './safe-event';
+import { TypedSafeEventEmitter } from './safe-event';
 
-interface IActor {
-	_id: ObjId;
+export interface IActor {
+	_id: Id;
 	firstName: string;
 	lastName: string;
 	name?: string;
 }
 
+// 1. Central Event Payloads Map (Strict Type Safety)
+export interface INotifyEventsMap {
+	'friend-request': { to: Id; sender: IActor; requestId: Id };
+	'friend-accepted': { to: Id; sender: IActor; requestId: Id };
+	'post-tagged': { to: Id; sender: IActor; postId: Id; content: string };
+	'post-comment': { to: Id; sender: IActor; postId: Id; commentId: Id; content: string };
+	'post-react': { to: Id; sender: IActor; postId: Id; reactionId: Id; reactionType: TReactionType };
+	'comment-tagged': { to: Id; sender: IActor; postId: Id; commentId: Id; content: string };
+	'comment-reply': { to: Id; sender: IActor; commentId: Id; replyId: Id; content: string };
+	'comment-react': { to: Id; sender: IActor; commentId: Id; reactionId: Id };
+}
+
+// 2. Instantiate with Event Map
+const notifyEvents = new TypedSafeEventEmitter<INotifyEventsMap>();
+
 const fullName = (actor: IActor) => actor.name?.trim() || `${actor.firstName} ${actor.lastName}`;
 
-const notifyEvents = new SafeEventEmitter();
-
 // Friend request ----------------------------------------------
-notifyEvents.onAsync('friend-request', async ({ to, sender, requestId }: { to: Id; sender: IActor; requestId: Id }) => {
+notifyEvents.onAsync('friend-request', async ({ to, sender, requestId }) => {
 	await sendNotification({
 		sendBy: sender._id,
 		sendTo: to,
@@ -27,7 +40,7 @@ notifyEvents.onAsync('friend-request', async ({ to, sender, requestId }: { to: I
 	});
 });
 
-notifyEvents.onAsync('friend-accepted', async ({ to, sender, requestId }: { to: Id; sender: IActor; requestId: Id }) => {
+notifyEvents.onAsync('friend-accepted', async ({ to, sender, requestId }) => {
 	await sendNotification({
 		sendBy: sender._id,
 		sendTo: to,
@@ -38,129 +51,76 @@ notifyEvents.onAsync('friend-accepted', async ({ to, sender, requestId }: { to: 
 	});
 });
 
-// post ----------------------------------------------
-notifyEvents.onAsync(
-	'post-tagged',
-	async ({ to, sender, postId, content }: { to: Id; sender: IActor; postId: Id; content: string }) => {
-		await sendNotification({
-			sendBy: sender._id,
-			sendTo: to,
-			type: NotificationTypeEnum.POST_TAGGED,
-			title: 'You were tagged',
-			body: `${fullName(sender)} tagged you in a post, "${content?.slice(0, 100) || ''}"`,
-			postId,
-		});
-	},
-);
+// Post events ----------------------------------------------
+notifyEvents.onAsync('post-tagged', async ({ to, sender, postId, content }) => {
+	await sendNotification({
+		sendBy: sender._id,
+		sendTo: to,
+		type: NotificationTypeEnum.POST_TAGGED,
+		title: 'You were tagged',
+		body: `${fullName(sender)} tagged you in a post: "${content?.slice(0, 100) || ''}"`,
+		postId,
+	});
+});
 
-notifyEvents.onAsync(
-	'post-comment',
-	async ({
-		to,
-		sender,
+notifyEvents.onAsync('post-comment', async ({ to, sender, postId, commentId, content }) => {
+	await sendNotification({
+		sendBy: sender._id,
+		sendTo: to,
+		type: NotificationTypeEnum.POST_COMMENT,
+		title: 'New comment',
+		body: `${fullName(sender)} commented: "${content?.slice(0, 100) || ''}"`,
 		postId,
 		commentId,
-		content,
-	}: {
-		to: Id;
-		sender: IActor;
-		postId: Id;
-		commentId: Id;
-		content: string;
-	}) => {
-		await sendNotification({
-			sendBy: sender._id,
-			sendTo: to,
-			type: NotificationTypeEnum.POST_COMMENT,
-			title: 'New comment',
-			body: `${fullName(sender)} commented: "${content?.slice(0, 100) || ''}"`,
-			postId,
-			commentId,
-		});
-	},
-);
+	});
+});
 
-notifyEvents.onAsync(
-	'post-react',
-	async ({
-		to,
-		sender,
+notifyEvents.onAsync('post-react', async ({ to, sender, postId, reactionId, reactionType }) => {
+	await sendNotification({
+		sendBy: sender._id,
+		sendTo: to,
+		type: NotificationTypeEnum.POST_REACT,
+		title: 'New reaction',
+		body: `${fullName(sender)} reacted to your post with ${reactionType}`,
 		postId,
 		reactionId,
-		reactionType,
-	}: {
-		to: Id;
-		sender: IActor;
-		postId: Id;
-		reactionId: Id;
-		reactionType: TReactionType;
-	}) => {
-		await sendNotification({
-			sendBy: sender._id,
-			sendTo: to,
-			type: NotificationTypeEnum.POST_REACT,
-			title: 'New reaction',
-			body: `${fullName(sender)} reacted to your post with ${reactionType}`,
-			postId,
-			reactionId,
-		});
-	},
-);
+	});
+});
 
-// Comment ----------------------------------------------
-notifyEvents.onAsync(
-	'comment-tagged',
-	async ({ to, sender, commentId, content }: { to: Id; sender: IActor; commentId: Id; content: string }) => {
-		await sendNotification({
-			sendBy: sender._id,
-			sendTo: to,
-			type: NotificationTypeEnum.POST_TAGGED,
-			title: 'You were tagged',
-			body: `${fullName(sender)} tagged you in a comment, "${content?.slice(0, 100) || ''}"`,
-			commentId,
-		});
-	},
-);
-notifyEvents.onAsync(
-	'comment-reply',
-	async ({
-		to,
-		sender,
+// Comment events ----------------------------------------------
+notifyEvents.onAsync('comment-tagged', async ({ to, sender, commentId, content }) => {
+	await sendNotification({
+		sendBy: sender._id,
+		sendTo: to,
+		type: NotificationTypeEnum.POST_TAGGED,
+		title: 'You were tagged',
+		body: `${fullName(sender)} tagged you in a comment: "${content?.slice(0, 100) || ''}"`,
+		commentId,
+	});
+});
+
+notifyEvents.onAsync('comment-reply', async ({ to, sender, commentId, replyId, content }) => {
+	await sendNotification({
+		sendBy: sender._id,
+		sendTo: to,
+		type: NotificationTypeEnum.COMMENT_REPLAY,
+		title: 'New reply',
+		body: `${fullName(sender)} replied: "${content?.slice(0, 100) || ''}"`,
 		commentId,
 		replyId,
-		content,
-	}: {
-		to: Id;
-		sender: IActor;
-		commentId: Id;
-		replyId: Id;
-		content: string;
-	}) => {
-		await sendNotification({
-			sendBy: sender._id,
-			sendTo: to,
-			type: NotificationTypeEnum.COMMENT_REPLAY,
-			title: 'New reply',
-			body: `${fullName(sender)} replied: "${content?.slice(0, 100) || ''}"`,
-			commentId,
-			replyId,
-		});
-	},
-);
+	});
+});
 
-notifyEvents.onAsync(
-	'comment-react',
-	async ({ to, sender, commentId, reactionId }: { to: Id; sender: IActor; commentId: Id; reactionId: Id }) => {
-		await sendNotification({
-			sendBy: sender._id,
-			sendTo: to,
-			type: NotificationTypeEnum.COMMENT_REACT,
-			title: 'New reaction',
-			body: `${fullName(sender)} reacted to your comment`,
-			commentId,
-			reactionId,
-		});
-	},
-);
+notifyEvents.onAsync('comment-react', async ({ to, sender, commentId, reactionId }) => {
+	await sendNotification({
+		sendBy: sender._id,
+		sendTo: to,
+		type: NotificationTypeEnum.COMMENT_REACT,
+		title: 'New reaction',
+		body: `${fullName(sender)} reacted to your comment`,
+		commentId,
+		reactionId,
+	});
+});
 
 export default notifyEvents;
