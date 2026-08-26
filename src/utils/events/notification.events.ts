@@ -1,7 +1,7 @@
 import { NotificationTypeEnum } from '../../modules/notification/notification.enum';
 import { TReactionType } from '../../modules/reaction/reaction.enum';
-import { Id, ObjId } from '../../shared/types';
-import { sendNotification } from '../firebase/push.service';
+import { Id } from '../../shared/types';
+import { sendNotification, sendNotificationToMany } from '../firebase/push.service';
 import { TypedSafeEventEmitter } from './safe-event';
 
 export interface IActor {
@@ -15,10 +15,10 @@ export interface IActor {
 export interface INotifyEventsMap {
 	'friend-request': { to: Id; sender: IActor; requestId: Id };
 	'friend-accepted': { to: Id; sender: IActor; requestId: Id };
-	'post-tagged': { to: Id; sender: IActor; postId: Id; content: string };
+	'post-tagged': { toIds: Id[]; sender: IActor; postId: Id; content: string };
 	'post-comment': { to: Id; sender: IActor; postId: Id; commentId: Id; content: string };
 	'post-react': { to: Id; sender: IActor; postId: Id; reactionId: Id; reactionType: TReactionType };
-	'comment-tagged': { to: Id; sender: IActor; postId: Id; commentId: Id; content: string };
+	'comment-tagged': { toIds: Id[]; sender: IActor; postId: Id; commentId: Id; content: string };
 	'comment-reply': { to: Id; sender: IActor; commentId: Id; replyId: Id; content: string };
 	'comment-react': { to: Id; sender: IActor; commentId: Id; reactionId: Id };
 }
@@ -52,10 +52,10 @@ notifyEvents.onAsync('friend-accepted', async ({ to, sender, requestId }) => {
 });
 
 // Post events ----------------------------------------------
-notifyEvents.onAsync('post-tagged', async ({ to, sender, postId, content }) => {
-	await sendNotification({
+notifyEvents.onAsync('post-tagged', async ({ toIds, sender, postId, content }) => {
+	await sendNotificationToMany(toIds, {
 		sendBy: sender._id,
-		sendTo: to,
+		sendTo: toIds[0] || '',
 		type: NotificationTypeEnum.POST_TAGGED,
 		title: 'You were tagged',
 		body: `${fullName(sender)} tagged you in a post: "${content?.slice(0, 100) || ''}"`,
@@ -88,10 +88,10 @@ notifyEvents.onAsync('post-react', async ({ to, sender, postId, reactionId, reac
 });
 
 // Comment events ----------------------------------------------
-notifyEvents.onAsync('comment-tagged', async ({ to, sender, commentId, content }) => {
+notifyEvents.onAsync('comment-tagged', async ({ toIds, sender, commentId, content }) => {
 	await sendNotification({
 		sendBy: sender._id,
-		sendTo: to,
+		sendTo: toIds[0] || '',
 		type: NotificationTypeEnum.POST_TAGGED,
 		title: 'You were tagged',
 		body: `${fullName(sender)} tagged you in a comment: "${content?.slice(0, 100) || ''}"`,
