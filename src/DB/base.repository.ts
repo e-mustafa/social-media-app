@@ -307,6 +307,9 @@ export abstract class BaseRepository<T> {
 		};
 	}
 
+	async countDocuments(filter: QueryFilter<T> = {}, options: IQueryOptions = {}): Promise<number> {
+		return await this.Model.countDocuments(filter, options);
+	}
 	async exists(filter: QueryFilter<T>, options?: IQueryOptions): Promise<boolean> {
 		const finalFilter = this.combineFilters(filter, !!options?.ignoreDefaultFilters);
 		const res = await this.Model.exists(finalFilter);

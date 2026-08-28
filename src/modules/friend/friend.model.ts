@@ -1,5 +1,5 @@
 import { model, Model, Schema } from 'mongoose';
-import { FriendRequestStatusEnum } from './friend.enums';
+import { FriendRequestStatusEnum } from './friend.enum';
 import { IFriend } from './friend.types';
 
 const friendSchema = new Schema<IFriend>(

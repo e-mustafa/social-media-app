@@ -8,7 +8,7 @@ export interface IUserImg {
 }
 export interface IUser {
 	_id: Id;
-	id: Id;
+	id?: string;
 
 	firstName: string;
 	lastName: string;
@@ -34,6 +34,9 @@ export interface IUser {
 	status?: TUserStatus;
 	statusReason?: TStatusReason;
 	statusChangedAt?: Date;
+
+	deviceTokens?: string[];
+	notificationEnabled?: boolean;
 
 	deletedAt?: Date;
 

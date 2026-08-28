@@ -1,6 +1,6 @@
 import { appConfig } from '../../config/app.config';
 import { ISessionInfo } from '../../modules/user/user.types';
-import { ObjId } from '../../shared/types/validation.type';
+import { ObjId } from '../../shared/types';
 import { BaseRedisCache } from './base-redis-services';
 
 export const redisRefreshToken = new BaseRedisCache<[string | ObjId, string] | string | ObjId, ISessionInfo>(

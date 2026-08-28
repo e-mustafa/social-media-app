@@ -1,7 +1,6 @@
 import { QueryFilter } from 'mongoose';
-import { IPaginatedResult } from '../../DB/base.repository';
 import { BadRequestException, NotFoundException } from '../../shared/response/exception.response';
-import { Id } from '../../shared/types/validation.type';
+import { Id, IPaginatedResult } from '../../shared/types';
 import { IQueryDTO } from '../../shared/validation/general-fields.validation';
 import { friendRepository } from '../friend';
 import { userRepository } from '../user';
@@ -20,7 +19,7 @@ class BlockServices {
 	async getBlockedUsers(
 		userId: Id,
 		{ page, limit, search }: IQueryDTO,
-	): Promise<IPaginatedResult<(IBlock & { blocked: IGeneralUser })[]>> {
+	): Promise<IPaginatedResult<IBlock & { blocked: IGeneralUser }>> {
 		const filter: QueryFilter<IBlock> = { blocker: userId };
 		if (search && search.trim()) {
 			const searchRegex = { $regex: search.trim(), $options: 'i' };

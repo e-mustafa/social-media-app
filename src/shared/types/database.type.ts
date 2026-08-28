@@ -4,7 +4,7 @@ import { IUser } from '../../modules';
 export type ObjId = Types.ObjectId;
 export type Id = Types.ObjectId | string;
 
-export interface IUserBody extends Omit<IUser, 'friends' | 'blockedUsers' | 'password'> {}
+export interface IUserBody extends Omit<IUser, 'password'> {}
 
 // Helper type to handle items inside arrays or paginated data
 type PopulateItem<R, P> =

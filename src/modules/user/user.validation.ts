@@ -33,7 +33,7 @@ export type IUploadCoverDTO = z.infer<typeof uploadCoverSchema.file>;
 
 export const paramsIdSchema = {
 	params: z.strictObject({
-		userId: generalFields.id,
+		userId: generalFields.idOrUsername,
 	}),
 };
 export type IParamsIdDTO = z.infer<typeof paramsIdSchema.params>;

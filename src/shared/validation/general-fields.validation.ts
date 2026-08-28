@@ -13,7 +13,7 @@ const otpRegex = /^\d{6}$/;
 
 const usernameRegex = /^[a-zA-Z0-9_]{6,30}$/;
 
-const objectIdRegex = /^[0-9a-fA-F]{24}$/;
+export const objectIdRegex = /^[0-9a-fA-F]{24}$/;
 
 const emailRegex = /^\w+([-.]?\w+)*@\w+([-.]?\w+)*(\.\w{2,3})+$/;
 // /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -73,6 +73,12 @@ export const attachmentsDBSchema = z.strictObject({
 
 export const generalFields = {
 	id: z.string('ID is required').trim().regex(objectIdRegex, 'ID is in-valid'),
+	idOrUsername: z.custom((value) => {
+		if (typeof value === 'string') {
+			return objectIdRegex.test(value) || usernameRegex.test(value);
+		}
+		return false;
+	}, 'ID or username is required'),
 	firstName: z
 		.string({ error: 'First name is required' })
 		.min(3, 'First name must be at least 3 characters long')
@@ -142,10 +148,10 @@ export type IParamsIdDTO = z.infer<typeof paramsIdSchema.params>;
 
 export const querySchema = {
 	query: z.object({
-		page: generalFields.page,
-		limit: generalFields.limit,
-		order: generalFields.order,
-		search: generalFields.search,
+		page: generalFields.page.optional(),
+		limit: generalFields.limit.optional(),
+		order: generalFields.order.optional(),
+		search: generalFields.search.optional(),
 	}),
 };
 export type IQueryDTO = z.infer<typeof querySchema.query>;

@@ -1,6 +1,6 @@
 import { BaseRepository } from '../../DB/base.repository';
 import { NotFoundException } from '../../shared/response/exception.response';
-import { Id } from '../../shared/types/validation.type';
+import { Id } from '../../shared/types';
 import Comment from './comment.model';
 import { IComment } from './comment.types';
 
