@@ -8,7 +8,7 @@ export interface IUserImg {
 }
 export interface IUser {
 	_id: Id;
-	id: Id;
+	id?: string;
 
 	firstName: string;
 	lastName: string;

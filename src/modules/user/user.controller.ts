@@ -14,13 +14,13 @@ export async function getMyProfile(req: Request, res: Response) {
 }
 
 export async function updateProfile(req: Request, res: Response) {
-	const data = await services.updateProfile(req.user?._id, req.body || {});
+	const data = await services.updateProfile(req.user?._id as Id, req.body || {});
 	successResponse({ res, data });
 }
 
 export async function uploadUserPic(req: Request, res: Response) {
 	const uFile: IFile = Object.values(req.file || {})[0];
-	const data = await services.uploadUserPic(req.user?._id, uFile as IFile);
+	const data = await services.uploadUserPic(req.user?._id as Id, uFile as IFile);
 	successResponse({ res, message: `${uFile.fieldname} uploaded successfully`, data });
 }
 
@@ -32,7 +32,7 @@ export function deleteUserPic(fieldname: 'avatar' | 'cover') {
 }
 
 export async function getUser(req: Request, res: Response) {
-	const data = await services.getUser(req.params.userId as IParamsIdDTO['id'], req.user?._id);
+	const data = await services.getUser(req.params.userId as IParamsIdDTO['id'], req.user?._id as Id);
 	successResponse({ res, data });
 }
 
