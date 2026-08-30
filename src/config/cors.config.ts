@@ -1,7 +1,7 @@
 import { CorsOptions } from 'cors';
 import { ENV } from './env.config';
 
-const whiteList = [ENV.frontendUrl, ...(ENV.allowedOrigin ? ENV.allowedOrigin.split(', ') : [])];
+export const whiteList = [ENV.frontendUrl, ...(ENV.allowedOrigin ? ENV.allowedOrigin.split(', ') : [])];
 
 export const corsOptions: CorsOptions = {
 	credentials: true,

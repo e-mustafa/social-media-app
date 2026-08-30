@@ -3,6 +3,7 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express, { Express, NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
+import { Server, Socket } from 'socket.io';
 import { corsOptions } from './config/cors.config';
 import { ENV } from './config/env.config';
 import { limiter } from './config/rate-limit.config';
@@ -13,6 +14,8 @@ import {
 	authRoutes,
 	blockRouter,
 	blockRoutes,
+	chatRouter,
+	chatRoutes,
 	commentRouter,
 	commentRoutes,
 	friendRouter,
@@ -55,6 +58,7 @@ export const bootstrap = async (app: Express): Promise<void> => {
 	app.use(`${apiBaseUrl}${commentRoutes.base}`, commentRouter);
 	app.use(`${apiBaseUrl}${reactionRoutes.base}`, reactionRouter);
 	app.use(`${apiBaseUrl}${notificationRoutes.base}`, notificationRouter);
+	app.use(`${apiBaseUrl}${chatRoutes.base}`, chatRouter);
 	// routes --------------------------------------------------------
 
 	// handle not found routes
@@ -65,5 +69,17 @@ export const bootstrap = async (app: Express): Promise<void> => {
 	// error handler
 	app.use(globalErrorHandler);
 
-	app.listen(ENV.port, () => console.log(chalk.bgGreenBright.bold('✔ App is running on port: ' + ENV.port)));
+	const httpServer = app.listen(ENV.port, () =>
+		console.log(chalk.bgGreenBright.bold('✔ App is running on port: ' + ENV.port)),
+	);
+	// connect socket
+	const io = new Server(httpServer, { cors: { origin: ENV.frontendUrl } });
+
+	io.on('connect', (socket: Socket) => {
+		console.log('New connection detected');
+		console.log(socket.id);
+		socket.on('disconnect', () => {
+			console.log('user disconnected', socket.id);
+		});
+	});
 };

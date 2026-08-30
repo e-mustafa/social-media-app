@@ -11,3 +11,11 @@ declare global {
 		}
 	}
 }
+
+declare module 'Socket.io' {
+	interface Socket {
+		user: IUserBody;
+		// decoded?: IJwtPayload;
+		// body: Record<string, unknown>;
+	}
+}
