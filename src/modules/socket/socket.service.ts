@@ -2,10 +2,9 @@ import { Socket } from 'socket.io';
 import { NotFoundException } from '../../shared/response/exception.response';
 import { TAttachment } from '../../shared/types';
 import { redisConnectedSocket } from '../../utils/redis/connected-socket-service.redis';
+import chatRepository from '../chat/chat.repository';
 import { messageRepository } from '../message';
 import { userRepository } from '../user';
-import chatRepository from './chat.repository';
-
 
 // export type ChatSocketEvent =
 // 	| { type: 'message:send'; payload: ChatSendPayload }
@@ -19,7 +18,6 @@ import chatRepository from './chat.repository';
 // 	| { type: 'recording:stop'; payload: RecordingPayload }
 // 	| { type: 'recording:user_status'; payload: RecordingUserStatusPayload }
 // 	| { type: 'user:online_status'; payload: OnlineStatusPayload };
-
 
 class ChatSocketService {
 	async sendMessage({

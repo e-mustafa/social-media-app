@@ -1,5 +1,5 @@
 import { Socket } from 'socket.io';
-import chatEvents from './chat.events';
+import chatEvents from './socket.events';
 
 class ChatGateway {
 	register(socket: Socket) {
@@ -7,6 +7,7 @@ class ChatGateway {
 			console.log('message:send data', data);
 			chatEvents.sendMessage(socket);
 		});
+		// ...
 	}
 }
 

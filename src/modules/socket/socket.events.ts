@@ -1,5 +1,5 @@
 import { Socket } from 'socket.io';
-import chatSocketService from './chat.socket.service';
+import chatSocketService from './socket.service';
 
 class ChatEvents {
 	async sendMessage(socket: Socket) {
@@ -8,6 +8,5 @@ class ChatEvents {
 		});
 	}
 }
-
 
 export default new ChatEvents();

@@ -4,7 +4,7 @@ import { whiteList } from '../../config/cors.config';
 import { IUserBody } from '../../shared/types';
 import { redisConnectedSocket } from '../../utils/redis/connected-socket-service.redis';
 import { decodeToken } from '../../utils/security/token/token';
-import chatGateway from '../chat/chat.gateway';
+import chatGateway from './socket.registry';
 
 // const connectedSockets: Map<string, string[]> = new Map<string, string[]>(); // socketId: [userId1, userId2, ...][] = [];
 
