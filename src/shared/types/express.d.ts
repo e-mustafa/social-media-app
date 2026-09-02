@@ -11,3 +11,18 @@ declare global {
 		}
 	}
 }
+
+declare module 'express-serve-static-core' {
+	interface Request {
+		user?: IUserBody;
+		decoded?: IJwtPayload;
+		body: Record<string, unknown>;
+	}
+}
+
+declare module 'Socket.io' {
+	interface Socket {
+		user: IUserBody;
+		// decoded?: IJwtPayload;
+	}
+}

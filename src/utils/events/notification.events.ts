@@ -21,6 +21,8 @@ export interface INotifyEventsMap {
 	'comment-tagged': { toIds: Id[]; sender: IActor; postId: Id; commentId: Id; content: string };
 	'comment-reply': { to: Id; sender: IActor; commentId: Id; replyId: Id; content: string };
 	'comment-react': { to: Id; sender: IActor; commentId: Id; reactionId: Id };
+
+	//TODO - add chat received message event
 }
 
 // 2. Instantiate with Event Map

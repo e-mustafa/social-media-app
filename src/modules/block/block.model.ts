@@ -1,4 +1,5 @@
 import { Model, Schema, model } from 'mongoose';
+import mongooseLeanVirtuals from 'mongoose-lean-virtuals';
 import { IBlock } from './block.types';
 
 const blockSchema = new Schema<IBlock>(
@@ -8,6 +9,9 @@ const blockSchema = new Schema<IBlock>(
 	},
 	{ timestamps: true },
 );
+
+// use mongoose-lean-virtuals to get virtuals in lean queries
+blockSchema.plugin(mongooseLeanVirtuals);
 
 // Ensure a user cannot block the same user multiple times
 blockSchema.index({ blocker: 1, blocked: 1 }, { unique: true });

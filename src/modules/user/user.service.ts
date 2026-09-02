@@ -1,12 +1,11 @@
 import { QueryFilter } from 'mongoose';
-import { GenericRepository } from '../../DB/base.repository';
 import { BadRequestException, NotFoundException } from '../../shared/response/exception.response';
 import { Id, IFile, IPaginatedResult } from '../../shared/types';
 import { IQueryDTO, objectIdRegex } from '../../shared/validation/general-fields.validation';
 import { encrypt } from '../../utils/security/encryption.security';
 import cloudinary, { uploadUserProfileMedia } from '../../utils/upload-files/cloudinary';
-import { Block } from '../block/block.model';
-import { IBlock } from '../block/block.types';
+import { blockRepository, BlockRepository } from '../block';
+import chatSocketService from '../chat/chat.socket.service';
 import userRepository, { UserRepository } from './user.repository';
 import { IGeneralUser, IUser, IUserDocument } from './user.types';
 import { IUpdateProfileDTO } from './user.validation';
@@ -16,7 +15,7 @@ export const selectGeneralUserInfo = 'firstName lastName username bio gender ava
 class UserServices {
 	constructor(
 		private readonly UserRepo: UserRepository = userRepository,
-		private readonly BlockRepo: GenericRepository<IBlock> = new GenericRepository(Block),
+		private readonly BlockRepo: BlockRepository = blockRepository,
 	) {}
 
 	async updateProfile(userId: Id, user: IUpdateProfileDTO): Promise<IUser> {
@@ -159,209 +158,17 @@ class UserServices {
 		return users;
 	}
 
-	// Block -------------------------------------------------
-	// async getBlockUsers(userId: Id, { page, limit, search }: IQueryDTO): Promise<IPaginatedResult<IGeneralUser[]>> {
-	// 	const myUser = await this.UserRepo.findById(userId).lean().select('blockedUsers').exec();
-	// 	if (!myUser) throw new NotFoundException('User not found', 'getMyFriends');
+	async getUserStatus(userId: Id, targetUserId: string): Promise<{ isOnline: boolean; lastSeenAt: Date | null }> {
+		const isBlocked = await this.BlockRepo.isBlocked(userId, targetUserId);
+		if (isBlocked) throw new NotFoundException('User not found', 'Get-user-status');
 
-	// 	const blockedIds = myUser?.blockedUsers || [];
+		const targetUser = await this.UserRepo.findOne({ _id: targetUserId }).lean().select('_id lastSeenAt').exec();
+		if (!targetUser) throw new NotFoundException('User not found', 'Get-user-status');
 
-	// 	// Return early empty pagination payload if the user has no blocked
-	// 	if (!blockedIds.length) {
-	// 		return {
-	// 			data: [],
-	// 			metadata: {
-	// 				page,
-	// 				limit,
-	// 				total: 0,
-	// 				totalPages: 0,
-	// 				hasNext: false,
-	// 				hasPrev: false,
-	// 			},
-	// 		};
-	// 	}
+		const isOnline = await chatSocketService.isUserOnline(targetUser._id);
 
-	// 	// Build direct filter targeting blocked IDs and ignoring blocked status
-	// 	const filter: QueryFilter<IGeneralUser> = { _id: { $in: blockedIds }, blockedUsers: { $nin: [userId] } };
-
-	// 	// Apply search filters directly against the target friend fields
-	// 	if (search && search.trim()) {
-	// 		const searchRegex = { $regex: search.trim(), $options: 'i' };
-	// 		filter.$or = [{ username: searchRegex }, { firstName: searchRegex }, { lastName: searchRegex }];
-	// 	}
-
-	// 	// Execute pagination query on User collection directly for optimal performance
-	// 	const data = await this.UserRepo
-	// 		.find(filter)
-	// 		.lean<IGeneralUser>()
-	// 		.select(selectGeneralUserInfo)
-	// 		.paginate(page, limit)
-	// 		.exec();
-	// 	return data;
-	// }
-
-	// async blockUser(userId: Id, targetUserId: string): Promise<IUser> {
-	// 	// 1. Prevent self-blocking
-	// 	if (userId.toString() === targetUserId.toString()) {
-	// 		throw new BadRequestException('You cannot block yourself', 'Block-user');
-	// 	}
-
-	// 	// 2. Check block status
-	// 	const [currentUser, targetUser] = await Promise.all([
-	// 		this.UserRepo
-	// 			.findOne({ _id: userId, blockedUsers: { $nin: [targetUserId] } })
-	// 			.lean()
-	// 			.exec(),
-	// 		this.UserRepo
-	// 			.findOne({ _id: targetUserId, blockedUsers: { $nin: [userId] } })
-	// 			.lean()
-	// 			.exec(),
-	// 	]);
-
-	// 	if (!currentUser) {
-	// 		throw new NotFoundException('You have already blocked this user', 'Block-user');
-	// 	}
-
-	// 	if (!targetUser) {
-	// 		throw new NotFoundException('User not found', 'Block-user');
-	// 	}
-
-	// 	// 4. Construct write operations array safely
-	// 	const updatePromises: Promise<unknown>[] = [
-	// 		// Primary query: Update current user's blocked and friends lists (Always index 0)
-	// 		this.UserRepo
-	// 			.findByIdAndUpdate(
-	// 				userId,
-	// 				{ $addToSet: { blockedUsers: targetUserId }, $pull: { friends: targetUserId } },
-	// 				{ runValidators: false },
-	// 			)
-	// 			.select('blockedUsers friends')
-	// 			.lean()
-	// 			.exec(),
-
-	// 		// Delete any pending or accepted friend records between the two users
-	// 		this.FriendRepo.deleteMany({
-	// 			$or: [
-	// 				{ sendBy: userId, sentTo: targetUserId },
-	// 				{ sendBy: targetUserId, sentTo: userId },
-	// 			],
-	// 		}),
-	// 	];
-
-	// 	// Remove current user from target user's friends list if friend existed
-	// 	if (targetUser.friends?.some((id) => id.toString() === userId.toString())) {
-	// 		updatePromises.push(this.UserRepo.updateOne({ _id: targetUserId }, { $pull: { friends: userId } }));
-	// 	}
-
-	// 	// 5. Execute all updates concurrently
-	// 	const [updatedUser] = await Promise.all(updatePromises);
-
-	// 	if (!updatedUser) {
-	// 		throw new NotFoundException('Failed to update user profile', 'Block-user');
-	// 	}
-
-	// 	return updatedUser as unknown as IUser;
-	// }
-
-	// async unblockUser(userId: Id, targetUserId: string): Promise<Partial<IUser>> {
-	// 	if (userId.toString() === targetUserId.toString()) {
-	// 		throw new BadRequestException('You cannot unblock yourself', 'Unblock-user');
-	// 	}
-
-	// 	const user = await this.UserRepo.findOne({ _id: userId }).lean().exec();
-	// 	if (!user || !user.blockedUsers) {
-	// 		throw new BadRequestException('User not found', 'Unblock-user');
-	// 	}
-
-	// 	if (!user.blockedUsers.some((id) => id.toString() === targetUserId.toString())) {
-	// 		throw new BadRequestException('You have not blocked this user', 'Unblock-user');
-	// 	}
-
-	// 	const updatedUser = await this.UserRepo
-	// 		.findByIdAndUpdate(userId, { $pull: { blockedUsers: targetUserId } }, { runValidators: false })
-	// 		.select('blockedUsers')
-	// 		.lean()
-	// 		.exec();
-
-	// 	if (!updatedUser) {
-	// 		throw new NotFoundException('Failed to update user profile', 'Unblock-user');
-	// 	}
-
-	// 	return updatedUser;
-	// }
-
-	// Friends -------------------------------------------
-	// async getMyFriends(userId: Id, { page = 1, limit = 10, search }: IQueryDTO): Promise<IPaginatedResult<Partial<IUser>[]>> {
-	// 	const myUser = await this.UserRepo.findById(userId).lean().select('friends').exec();
-	// 	if (!myUser) throw new NotFoundException('User not found', 'getMyFriends');
-
-	// 	const friendIds = myUser?.friends || [];
-
-	// 	// Return early empty pagination payload if the user has no friends
-	// 	if (!friendIds.length) {
-	// 		return {
-	// 			data: [],
-	// 			metadata: {
-	// 				page,
-	// 				limit,
-	// 				total: 0,
-	// 				totalPages: 0,
-	// 				hasNext: false,
-	// 				hasPrev: false,
-	// 			},
-	// 		};
-	// 	}
-
-	// 	// Build direct filter targeting friend IDs and ignoring blocked status
-	// 	const filter: QueryFilter<IUser> = { _id: { $in: friendIds }, blockedUsers: { $nin: [userId] } };
-
-	// 	// Apply search filters directly against the target friend fields
-	// 	if (search && search.trim()) {
-	// 		const searchRegex = { $regex: search.trim(), $options: 'i' };
-	// 		filter.$or = [{ username: searchRegex }, { firstName: searchRegex }, { lastName: searchRegex }];
-	// 	}
-
-	// 	// Execute pagination query on User collection directly for optimal performance
-	// 	const data = await this.UserRepo.find(filter).lean().select(selectUserInfo).paginate(page, limit).exec();
-	// 	return data;
-	// }
-
-	// async removeFriend(userId: Id, targetUserId: Id): Promise<IUser> {
-	// 	const [targetUser, myUser] = await Promise.all([
-	// 		this.UserRepo
-	// 			.findOne({ _id: targetUserId, blockedUsers: { $nin: [userId] } })
-	// 			.lean()
-	// 			.exec(),
-	// 		this.UserRepo
-	// 			.findOne({ _id: userId, blockedUsers: { $nin: [targetUserId] } }, { ignoreDefaultFilters: true })
-	// 			.lean()
-	// 			.exec(),
-	// 	]);
-
-	// 	if (!targetUser) {
-	// 		throw new NotFoundException('User not found', 'Deactivate-my-account');
-	// 	}
-
-	// 	if (!myUser || myUser?.deletedAt) {
-	// 		throw new NotFoundException('User not found', 'Deactivate-my-account');
-	// 	}
-
-	// 	if (myUser.status !== UserStatusEnum.ACTIVE) {
-	// 		throw new BadRequestException('Your account is not active, you can not make changes.', 'Deactivate-my-account');
-	// 	}
-
-	// 	const updated = await this.UserRepo
-	// 		.findByIdAndUpdate(userId, { friends: { $pull: targetUserId } })
-	// 		.select('friends')
-	// 		.lean()
-	// 		.exec();
-
-	// 	if (!updated) {
-	// 		throw new BadRequestException('failed to remove friend', 'Remove-friend');
-	// 	}
-
-	// 	return updated;
-	// }
+		return { isOnline, lastSeenAt: targetUser.lastSeenAt ?? null };
+	}
 }
 
 export default new UserServices();

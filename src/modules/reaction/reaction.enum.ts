@@ -12,6 +12,7 @@ export const ReactionTypeEnum = {
 	WOW: 'wow',
 	SAD: 'sad',
 	ANGRY: 'angry',
+	DISLIKE: 'dislike',
 } as const;
 
 export type TReactionType = (typeof ReactionTypeEnum)[keyof typeof ReactionTypeEnum];

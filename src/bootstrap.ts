@@ -13,6 +13,8 @@ import {
 	authRoutes,
 	blockRouter,
 	blockRoutes,
+	chatRouter,
+	chatRoutes,
 	commentRouter,
 	commentRoutes,
 	friendRouter,
@@ -27,10 +29,12 @@ import {
 import { reactionRouter, reactionRoutes } from './modules/reaction';
 import { NotFoundException } from './shared/response/exception.response';
 import { connectRedis } from './utils/redis/client.redis';
+import { initializeSocket } from './utils/socket/socket.init';
 
 const apiBaseUrl = ENV.apiBaseUrl;
 
 export const bootstrap = async (app: Express): Promise<void> => {
+	app.set('trust proxy', 1);
 	// security middlewares
 	app.use(helmet(), limiter, cors(corsOptions));
 
@@ -55,6 +59,7 @@ export const bootstrap = async (app: Express): Promise<void> => {
 	app.use(`${apiBaseUrl}${commentRoutes.base}`, commentRouter);
 	app.use(`${apiBaseUrl}${reactionRoutes.base}`, reactionRouter);
 	app.use(`${apiBaseUrl}${notificationRoutes.base}`, notificationRouter);
+	app.use(`${apiBaseUrl}${chatRoutes.base}`, chatRouter);
 	// routes --------------------------------------------------------
 
 	// handle not found routes
@@ -65,5 +70,10 @@ export const bootstrap = async (app: Express): Promise<void> => {
 	// error handler
 	app.use(globalErrorHandler);
 
-	app.listen(ENV.port, () => console.log(chalk.bgGreenBright.bold('✔ App is running on port: ' + ENV.port)));
+	const httpServer = app.listen(ENV.port, () =>
+		console.log(chalk.bgGreenBright.bold('✔ App is running on port: ' + ENV.port)),
+	);
+
+	// initialize socket
+	initializeSocket(httpServer);
 };

@@ -223,7 +223,6 @@ class AuthServices {
 
 	public async login(req: Request, { email, password, rememberMe = false }: ILoginDTO): Promise<TLoginResult> {
 		const user = await this.userRepo.findByEmail(email, { ignoreDefaultFilters: true }).exec();
-		console.log('user', user);
 
 		if (!user) {
 			throw new NotFoundException('Invalid Credentials', 'User-not-found_login');
@@ -584,7 +583,6 @@ class AuthServices {
 
 	async reactivateMyAccount(req: Request, email: string, token: string): Promise<TTokens> {
 		const user = await this.userRepo.findByEmail(email, { ignoreDefaultFilters: true }).exec();
-		console.log('user', user);
 
 		if (!user || user?.deletedAt) {
 			throw new NotFoundException('User not found', 'Deactivate-my-account');

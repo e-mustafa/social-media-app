@@ -40,6 +40,13 @@ export interface IUser {
 
 	deletedAt?: Date;
 
+	lastSeenAt?: Date;
+
+	createdAt: Date;
+	updatedAt?: Date;
+
+	name?: string;
+
 	// Lists -----------
 	// friends: Id[];
 	// blockedUsers: Id[];

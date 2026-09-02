@@ -117,7 +117,7 @@ const userSchema = new Schema<IUser>(
 		// 	type: Schema.Types.ObjectId,
 		// 	ref: 'User',
 		// },
-		
+
 		deviceTokens: [String],
 		notificationEnabled: {
 			type: Boolean,
@@ -136,14 +136,9 @@ const userSchema = new Schema<IUser>(
 			type: Date,
 		},
 
-		// Block
-		// blockedUsers: {
-		// 	type: [{ type: Schema.Types.ObjectId, ref: 'User' }],
-		// 	default: [],
-		// },
-
-		// Friends
-		// friends: { type: [{ type: Schema.Types.ObjectId, ref: 'User' }], default: [] },
+		lastSeenAt: {
+			type: Date,
+		},
 	},
 	{
 		timestamps: true,

@@ -6,11 +6,13 @@ import {
 	InsertManyOptions,
 	LeanOptions,
 	Model,
+	MongooseBaseQueryOptionKeys,
 	MongooseUpdateQueryOptions,
 	PipelineStage,
 	PopulateOptions,
 	Query,
 	QueryFilter,
+	QueryOptions,
 	SaveOptions,
 	Types,
 	UpdateQuery,
@@ -30,7 +32,7 @@ type ExtractItemType<R> = R extends Array<infer U> ? U : R extends IPaginatedRes
 // Utility type to transform return type R to populated type P while maintaining nullability and structure
 
 // Query Options Interface
-export interface IQueryOptions {
+export interface IQueryOptions extends QueryOptions {
 	returnDocument?: 'after' | 'before';
 	runValidators?: boolean;
 	session?: ClientSession;
@@ -43,6 +45,13 @@ export interface IUpdateOptions extends MongooseUpdateQueryOptions {
 	runValidators?: boolean;
 	ignoreDefaultFilters?: boolean;
 }
+
+type CountDocumentsOptions<T> = Pick<QueryOptions<T>, 'lean' | 'timestamps' | MongooseBaseQueryOptionKeys> & {
+	[other: string]: any;
+} & {
+	session?: ClientSession;
+	ignoreDefaultFilters?: boolean;
+};
 
 // Flexible Delete Options
 export interface IDeleteOptions {
@@ -307,7 +316,7 @@ export abstract class BaseRepository<T> {
 		};
 	}
 
-	async countDocuments(filter: QueryFilter<T> = {}, options: IQueryOptions = {}): Promise<number> {
+	async countDocuments(filter: QueryFilter<T> = {}, options: CountDocumentsOptions<T> = {}): Promise<number> {
 		return await this.Model.countDocuments(filter, options);
 	}
 	async exists(filter: QueryFilter<T>, options?: IQueryOptions): Promise<boolean> {

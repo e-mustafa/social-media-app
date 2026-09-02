@@ -103,7 +103,7 @@ class CommentServices {
 		if (taggedUsers?.length) {
 			taggedUsers.forEach((id) => {
 				if (id.toString() !== userIdStr) {
-					notifyEvents.emitAsync('comment-tagged', { to: id, sender: user, postId, commentId, content });
+					notifyEvents.emitAsync('comment-tagged', { toIds: taggedUsers, sender: user, postId, commentId, content });
 				}
 			});
 		}

@@ -1,6 +1,7 @@
 import { model, Model, Schema } from 'mongoose';
 import { FriendRequestStatusEnum } from './friend.enum';
 import { IFriend } from './friend.types';
+import mongooseLeanVirtuals from 'mongoose-lean-virtuals';
 
 const friendSchema = new Schema<IFriend>(
 	{
@@ -24,6 +25,9 @@ const friendSchema = new Schema<IFriend>(
 		timestamps: true,
 	},
 );
+
+// use mongoose-lean-virtuals to get virtuals in lean queries
+friendSchema.plugin(mongooseLeanVirtuals);
 
 const Friend: Model<IFriend> = model('Friend', friendSchema);
 

@@ -1,6 +1,7 @@
 import { model, Schema } from 'mongoose';
 import { attachmentsSchemaDB } from '../post';
 import { IComment } from './comment.types';
+import mongooseLeanVirtuals from 'mongoose-lean-virtuals';
 
 const commentSchema = new Schema<IComment>(
 	{
@@ -82,6 +83,9 @@ const commentSchema = new Schema<IComment>(
 		toJSON: { virtuals: true },
 	},
 );
+
+// use mongoose-lean-virtuals to get virtuals in lean queries
+commentSchema.plugin(mongooseLeanVirtuals);
 
 // Indexes ------------------------------------
 commentSchema.index({ author: 1, createdAt: -1 });

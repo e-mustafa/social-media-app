@@ -21,7 +21,7 @@ export class BaseRedisCache<TKey = TRedisKeyPart, TValue = string | number | Obj
 		await redisDB.set(this.getKey(key), payload, {
 			expiration: {
 				type: 'EX',
-				value: expiresInSeconds, // 5 minutes
+				value: expiresInSeconds,
 			},
 		});
 	}
@@ -34,7 +34,7 @@ export class BaseRedisCache<TKey = TRedisKeyPart, TValue = string | number | Obj
 		if (this.isJson) {
 			try {
 				return JSON.parse(data) as TValue;
-			} catch (error) {
+			} catch {
 				return null;
 			}
 		}
@@ -62,6 +62,52 @@ export class BaseRedisCache<TKey = TRedisKeyPart, TValue = string | number | Obj
 	public async expire(key: TKey, seconds: number): Promise<void> {
 		await redisDB.expire(this.getKey(key), seconds);
 	}
+
+	// --- Redis Set Native Operations ---
+
+	// Adds one or multiple members to a Redis Set and sets TTL
+	public async sAdd(key: TKey, members: string | string[], expiresInSeconds: number = this.defaultTTL): Promise<number> {
+		const redisKey = this.getKey(key);
+		const itemsToAdd = Array.isArray(members) ? members : [members];
+
+		if (itemsToAdd.length === 0) return 0;
+
+		const addedCount = await redisDB.sAdd(redisKey, itemsToAdd);
+
+		if (expiresInSeconds > 0) {
+			await redisDB.expire(redisKey, expiresInSeconds);
+		}
+
+		return addedCount;
+	}
+
+	// Removes one or multiple members from a Redis Set
+	public async sRem(key: TKey, members: string | string[]): Promise<number> {
+		const redisKey = this.getKey(key);
+		const itemsToRemove = Array.isArray(members) ? members : [members];
+
+		if (itemsToRemove.length === 0) return 0;
+
+		return await redisDB.sRem(redisKey, itemsToRemove);
+	}
+
+	// Returns total member count in a Redis Set
+	public async sCard(key: TKey): Promise<number> {
+		return await redisDB.sCard(this.getKey(key));
+	}
+
+	// Returns all members of a Redis Set
+	public async sMembers(key: TKey): Promise<string[]> {
+		return await redisDB.sMembers(this.getKey(key));
+	}
+
+	// Checks if a member exists in a Redis Set
+	public async sIsMember(key: TKey, member: string): Promise<boolean> {
+		const result = await redisDB.sIsMember(this.getKey(key), member);
+		return result === 1 || result === true;
+	}
+
+	// --- Pattern Operations ---
 
 	public async deletePattern(key: TKey): Promise<void> {
 		const pattern = this.getKey(key);
@@ -93,7 +139,6 @@ export class BaseRedisCache<TKey = TRedisKeyPart, TValue = string | number | Obj
 		const foundKeys: string[] = [];
 		const BATCH_SIZE = 200;
 
-		// Step 1: Collect matching keys using SCAN to avoid blocking Redis event loop
 		for await (const result of redisDB.scanIterator({ MATCH: pattern, COUNT: BATCH_SIZE })) {
 			const keyFound = Array.isArray(result) ? result[0] : result;
 			if (keyFound) {
@@ -107,7 +152,6 @@ export class BaseRedisCache<TKey = TRedisKeyPart, TValue = string | number | Obj
 
 		const results: TValue[] = [];
 
-		// Step 2: Fetch values in chunks via MGET to optimize network RTT and memory allocation
 		for (let i = 0; i < foundKeys.length; i += BATCH_SIZE) {
 			const chunkKeys = foundKeys.slice(i, i + BATCH_SIZE);
 			const rawValues = await redisDB.mGet(chunkKeys);
@@ -120,7 +164,6 @@ export class BaseRedisCache<TKey = TRedisKeyPart, TValue = string | number | Obj
 						const parsedValue = JSON.parse(rawValue) as TValue;
 						results.push(parsedValue);
 					} catch {
-						// Ignore corrupted JSON strings gracefully
 						continue;
 					}
 				} else {
@@ -132,15 +175,11 @@ export class BaseRedisCache<TKey = TRedisKeyPart, TValue = string | number | Obj
 		return results;
 	}
 
-	/**
-	 * Fetches matching key-value pairs for a pattern to allow key inspection.
-	 */
 	public async getByPatternWithKeys(key: TKey): Promise<Array<{ key: string; value: TValue }>> {
 		const pattern = this.getKey(key);
 		const foundKeys: string[] = [];
 		const BATCH_SIZE = 200;
 
-		// Stream matching keys using SCAN iterator
 		for await (const result of redisDB.scanIterator({ MATCH: pattern, COUNT: BATCH_SIZE })) {
 			if (Array.isArray(result)) {
 				foundKeys.push(...result);
@@ -155,7 +194,6 @@ export class BaseRedisCache<TKey = TRedisKeyPart, TValue = string | number | Obj
 
 		const results: Array<{ key: string; value: TValue }> = [];
 
-		// Fetch values in batches via MGET
 		for (let i = 0; i < foundKeys.length; i += BATCH_SIZE) {
 			const chunkKeys = foundKeys.slice(i, i + BATCH_SIZE);
 			const rawValues = await redisDB.mGet(chunkKeys);

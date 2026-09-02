@@ -73,6 +73,15 @@ export const appConfig = {
 		defaultOrder: sortOrderEnum.DESC,
 		defaultLimit: 10,
 	},
+
+	chat: {
+		defaultOrder: sortOrderEnum.DESC,
+		defaultLimit: 10,
+	},
+
+	socket: {
+		expiresIn: 60 * 60 * 24 * 7, // 7 days
+	},
 	// messages: {
 	// 	maxMessageLength: 1000,
 	// 	maxAttachmentsPerMessage: 4,
