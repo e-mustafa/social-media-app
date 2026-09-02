@@ -30,6 +30,8 @@ export const routes = {
 
 	getUser: '/:userId',
 	getUsers: '/',
+
+	getUserStatus: '/:userId/status', // online/lastSeenAt
 };
 
 // apply auth middleware for all routes in this router
@@ -57,6 +59,9 @@ router.delete(routes.deleteCover, controller.deleteUserPic('cover'));
 // Get user -------------------------------------------------
 router.get(routes.getUser, validation(paramsIdSchema), controller.getUser);
 router.get(routes.getUsers, validation(getUsersSchema), controller.getUsers);
+
+// get user status
+router.get(routes.getUserStatus, validation(paramsIdSchema), controller.getUserStatus);
 
 // TODO add search and get users route /> by admin
 export default router;

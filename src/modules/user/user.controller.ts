@@ -43,3 +43,8 @@ export async function getUsers(req: Request, res: Response) {
 	const { data, metadata } = await services.getUsers(user?._id as Id, query as unknown as IQueryDTO);
 	successResponse({ res, metadata, data });
 }
+
+export async function getUserStatus(req: Request, res: Response) {
+	const data = await services.getUserStatus(req.user?._id as Id, req.params.userId as string);
+	successResponse({ res, data });
+}

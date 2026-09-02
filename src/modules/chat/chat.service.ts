@@ -20,7 +20,7 @@ class ChatServices {
 	async getChatMessageList(userId: Id, chatId: string, { page = 1, limit = 10 }: IQueryDTO) {
 		const chat = await this.ChatRepo.findOne({
 			_id: chatId,
-			// participation: { $in: [userId] },
+			participants: { $in: [userId] },
 		})
 			.lean()
 			.exec();
@@ -56,6 +56,48 @@ class ChatServices {
 
 		return chatList;
 	}
+
+	async getUnreadCount(userId: Id, chatId: string) {
+		const chat = await this.ChatRepo.findOne({
+			_id: chatId,
+			participants: { $in: [userId] },
+		})
+			.lean()
+			.exec();
+
+		if (!chat) {
+			throw new NotFoundException('Chat not found', 'ChatServices.getChatMessageList');
+		}
+
+		const count = await this.MessageRepo.countDocuments({ chat: chat._id });
+
+		return count;
+	}
+
+	// async createChat(user: IUserBody, body: ICreateChatDTO): Promise<IChat> {
+	// 	const { targetUserId } = body;
+
+	// 	const blockedIds = await this.BlockRepo.getBlockedUsersIds(user._id);
+	// 	const users = await this.UserRepo.find({ _id: { $in: [targetUserId], $nin: blockedIds } })
+	// 		.lean()
+	// 		.select('_id')
+	// 		.exec();
+	// 	if (users.length !== participants.length) {
+	// 		throw new NotFoundException('User not found', 'ChatServices.createGroup');
+	// 	}
+
+	// 	const roomId = generateRandomToken(16);
+
+	// 	// TODO:upload group image
+	// 	const newGroup = await this.ChatRepo.create({
+	// 		groupName,
+	// 		roomId,
+	// 		participants: [user._id, ...users.map((u) => u._id)],
+	// 		createdBy: user._id,
+	// 	});
+
+	// 	return newGroup;
+	// }
 
 	async createGroup(user: IUserBody, body: ICreateGroupDTO, groupImg: IFile): Promise<IChat> {
 		const { participants, groupName } = body;

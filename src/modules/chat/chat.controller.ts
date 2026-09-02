@@ -19,6 +19,17 @@ export async function getChatMessageList(req: Request, res: Response) {
 	successResponse({ res, metadata, data });
 }
 
+export async function getUnreadCount(req: Request, res: Response) {
+	const count = await services.getUnreadCount(req.user?._id as Id, req.params.chatId as string);
+	successResponse({ res, data: { unreadCount: count } });
+}
+
+// export async function createChat(req: Request, res: Response) {
+// 	const { user, body } = req || {};
+// 	await services.createChat(user as IUserBody, body as ICreateChatDTO);
+// 	successResponse({ res, message: 'Chat created successfully' });
+// }
+
 export async function createGroup(req: Request, res: Response) {
 	const { user, body, file } = req || {};
 	await services.createGroup(user as IUserBody, body as ICreateGroupDTO, file as IFile);

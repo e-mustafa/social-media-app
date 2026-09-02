@@ -29,14 +29,14 @@ export class BlockRepository extends BaseRepository<IBlock> {
 	/**
 	 * Retrieve a list of all user IDs blocked by a specific user.
 	 */
-	async getBlockedUsersIds(userId: Id): Promise<Id[]> {
+	async getBlockedUsersIds(userId: Id): Promise<string[]> {
 		// const list = await this.find({ blocker: userId }).lean().exec();
 		const list = await this.find({ $or: [{ blocker: userId }, { blocked: userId }] })
 			.lean()
 			.exec();
 		const currentId = userId.toString();
 		return list.map((item) => {
-			return item.blocker.toString() === currentId ? item.blocked : item.blocker;
+			return item.blocker.toString() === currentId ? item.blocked.toString() : item.blocker.toString();
 		});
 	}
 }

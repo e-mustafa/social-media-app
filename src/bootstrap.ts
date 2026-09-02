@@ -27,13 +27,14 @@ import {
 	userRoutes,
 } from './modules';
 import { reactionRouter, reactionRoutes } from './modules/reaction';
-import { initializeIo } from './modules/socket/socket.init';
 import { NotFoundException } from './shared/response/exception.response';
 import { connectRedis } from './utils/redis/client.redis';
+import { initializeSocket } from './utils/socket/socket.init';
 
 const apiBaseUrl = ENV.apiBaseUrl;
 
 export const bootstrap = async (app: Express): Promise<void> => {
+	app.set('trust proxy', 1);
 	// security middlewares
 	app.use(helmet(), limiter, cors(corsOptions));
 
@@ -73,15 +74,6 @@ export const bootstrap = async (app: Express): Promise<void> => {
 		console.log(chalk.bgGreenBright.bold('✔ App is running on port: ' + ENV.port)),
 	);
 
-	initializeIo(httpServer);
-	// connect socket
-	// const io = new Server(httpServer, { cors: { origin: ENV.frontendUrl } });
-
-	// io.on('connect', (socket: Socket) => {
-	// 	console.log('New connection detected');
-	// 	console.log(socket.id);
-	// 	socket.on('disconnect', () => {
-	// 		console.log('user disconnected', socket.id);
-	// 	});
-	// });
+	// initialize socket
+	initializeSocket(httpServer);
 };

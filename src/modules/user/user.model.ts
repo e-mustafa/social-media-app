@@ -136,8 +136,9 @@ const userSchema = new Schema<IUser>(
 			type: Date,
 		},
 
-		// lastSeen,
-		// isOnline,
+		lastSeenAt: {
+			type: Date,
+		},
 	},
 	{
 		timestamps: true,

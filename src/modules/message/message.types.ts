@@ -1,5 +1,6 @@
 import { HydratedDocument } from 'mongoose';
 import { Id, ObjId, TAttachment } from '../../shared/types';
+import { TReactionType } from '../reaction/reaction.enum';
 
 export interface IGroupImg {
 	id: string;
@@ -18,6 +19,8 @@ export interface IMessage {
 	attachments?: TAttachment[];
 
 	readAt: Date;
+
+	reaction?: TReactionType;
 
 	// group: string;
 	// groupImg: IGroupImg;

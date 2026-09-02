@@ -1,7 +1,8 @@
 import { model, Model, Schema } from 'mongoose';
-import { attachmentsSchemaDB } from '../post';
-import { IMessage } from './message.types';
 import mongooseLeanVirtuals from 'mongoose-lean-virtuals';
+import { attachmentsSchemaDB } from '../post';
+import { ReactionTypeEnum } from '../reaction/reaction.enum';
+import { IMessage } from './message.types';
 
 const messageSchema = new Schema<IMessage>(
 	{
@@ -21,16 +22,17 @@ const messageSchema = new Schema<IMessage>(
 			},
 		},
 		readAt: Date,
-		// group: {
-		// 	type: String,
-		// },
-		// groupImg: {
-		// 	type: {
-		// 		id: { type: String, required: true },
-		// 		url: { type: String, required: true },
-		// 	},
-		// },
-		// roomId: String,
+
+		reaction: {
+			type: String,
+			enum: Object.values(ReactionTypeEnum),
+		},
+
+		// deliveredAt: Date,
+		// replyTo: { type: Schema.Types.ObjectId, ref: 'Message' },
+
+		// TODO: add message status field to track if the message is sent, delivered, or read
+		// TODO: add message replyTo
 	},
 	{
 		timestamps: true,
@@ -44,6 +46,12 @@ messageSchema.index({ chat: 1, sender: 1, receiver: 1, createdAt: -1 });
 messageSchema.index({ chat: 1, createdAt: -1 });
 messageSchema.index({ sender: 1, readAt: -1 });
 messageSchema.index({ content: 1, readAt: -1 });
+
+messageSchema.virtual('status').get(function (this: IMessage) {
+	if (this.readAt) return 'read';
+	// if (this.deliveredAt) return 'delivered';
+	return 'sent';
+});
 
 const Message: Model<IMessage> = model<IMessage>('Message', messageSchema);
 
