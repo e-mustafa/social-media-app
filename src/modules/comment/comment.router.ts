@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import { appConfig } from '../../config/app.config';
 import { auth } from '../../middlewares/auth.middleware';
+import { uploadCloud } from '../../middlewares/upload.middleware';
 import { validation } from '../../middlewares/validation.middleware';
-import { fileTypes } from '../../utils/upload-files/mime-types';
-import { uploadCloud } from '../../utils/upload-files/multer';
-// import * as controller from './comment.controller';
+import { fileTypes } from '../../providers/storage/mime-types';
+
 import {
 	createComment,
 	createReply,
@@ -13,7 +13,13 @@ import {
 	getPostComments,
 	updateComment,
 } from './comment.controller';
-import { createCommentSchema, createReplySchema, getCommentRepliesSchema, getPostCommentsSchema, updateCommentSchema } from './comment.validation';
+import {
+	createCommentSchema,
+	createReplySchema,
+	getCommentRepliesSchema,
+	getPostCommentsSchema,
+	updateCommentSchema,
+} from './comment.validation';
 
 const router = Router();
 

@@ -12,7 +12,7 @@ export const routes = {
 
 	getChatList: '/',
 	getChatMessageList: '/:chatId/messages',
-	getUnreadCount: ':chatId/messages/unread-count',
+	getUnreadCount: '/:chatId/messages/unread-count',
 	// getUserStatus: '/:userId/status', // online/lastSeenAt
 
 	// createChat: '/create-chat',

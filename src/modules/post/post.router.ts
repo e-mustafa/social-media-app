@@ -1,9 +1,9 @@
 import { Router } from 'express';
 import { appConfig } from '../../config/app.config';
 import { auth } from '../../middlewares/auth.middleware';
+import { uploadCloud } from '../../middlewares/upload.middleware';
 import { validation } from '../../middlewares/validation.middleware';
-import { fileTypes } from '../../utils/upload-files/mime-types';
-import { uploadCloud } from '../../utils/upload-files/multer';
+import { fileTypes } from '../../providers/storage/mime-types';
 import { createPost, deletePost, getFeeds, getMyPosts, getPost, getSomeUserPosts, updatePost } from './post.controller';
 import { createPostSchema, getPostsSchema, postIdParamsSchema, updatePostSchema } from './post.validation';
 

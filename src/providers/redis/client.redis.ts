@@ -19,7 +19,7 @@ export const redisDB = createClient({
 });
 
 redisDB.on('error', (err) => console.log(chalk.red('❌ Redis Error:'), err.message));
-redisDB.on('ready', () => console.log(chalk.green('✔ Connected to Redis successfully')));
+redisDB.on('ready', () => console.log(chalk.green('✔ Connected to Redis successfully 🏪')));
 
 export async function connectRedis() {
 	// be sure that the client is not connected already to avoid errors in Serverless environment

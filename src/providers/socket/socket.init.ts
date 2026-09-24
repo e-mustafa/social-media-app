@@ -1,7 +1,8 @@
+import chalk from 'chalk';
 import { Server as HttpServer } from 'node:http';
 import { Server, Socket } from 'socket.io';
 import { whiteList } from '../../config/cors.config';
-import chatGateway from '../../modules/chat/chat.socket.gateway';
+import chatSocketGateway from '../../modules/chat/socket/chat.socket.gateway';
 import { userRepository } from '../../modules/user';
 import { UnAuthorizedException } from '../../shared/response/exception.response';
 import { IUserBody } from '../../shared/types';
@@ -12,7 +13,7 @@ import { decodeToken } from '../security/token/token';
 let io: Server | null = null;
 
 const initializeSocket = (httpServer: HttpServer) => {
-	console.log('initializeSocket');
+	console.log(chalk.green('✔ Socket initialized successfully 🗣'));
 	io = new Server(httpServer, {
 		cors: { origin: whiteList },
 		pingTimeout: 5000, // Wait 5 seconds for pong response before disconnecting
@@ -29,7 +30,7 @@ const initializeSocket = (httpServer: HttpServer) => {
 			}
 
 			const decoded = decodeToken(token);
-			
+
 			const user: IUserBody | null = await userRepository
 				.findById(decoded.id)
 				.lean()
@@ -56,7 +57,7 @@ const initializeSocket = (httpServer: HttpServer) => {
 		socket.join(socket.user._id.toString());
 
 		// Register gateway events
-		chatGateway.register(io!, socket);
+		chatSocketGateway.register(io!, socket);
 	});
 };
 

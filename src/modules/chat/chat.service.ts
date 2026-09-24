@@ -1,7 +1,7 @@
+import { generateRandomToken } from '../../providers/security/otp-and-token';
 import { NotFoundException } from '../../shared/response/exception.response';
 import { Id, IFile, IUserBody } from '../../shared/types';
 import { IQueryDTO } from '../../shared/validation/general-fields.validation';
-import { generateRandomToken } from '../../utils/security/otp-and-token';
 import { blockRepository } from '../block';
 import { messageRepository } from '../message';
 import { selectGeneralUserInfo, userRepository } from '../user';
@@ -69,9 +69,11 @@ class ChatServices {
 			throw new NotFoundException('Chat not found', 'ChatServices.getChatMessageList');
 		}
 
-		const count = await this.MessageRepo.countDocuments({ chat: chat._id });
-
-		return count;
+		return await this.MessageRepo.countDocuments({
+			chat: chat._id,
+			receiver: userId,
+			readAt: { $exists: false },
+		});
 	}
 
 	// async createChat(user: IUserBody, body: ICreateChatDTO): Promise<IChat> {

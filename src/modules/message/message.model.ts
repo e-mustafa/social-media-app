@@ -9,7 +9,7 @@ const messageSchema = new Schema<IMessage>(
 		chat: { type: Schema.Types.ObjectId, ref: 'Chat', required: true },
 
 		sender: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-		receiver: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+		receiver: { type: Schema.Types.ObjectId, ref: 'User' },
 
 		attachments: attachmentsSchemaDB,
 		content: {

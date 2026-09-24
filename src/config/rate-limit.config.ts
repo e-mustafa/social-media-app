@@ -3,6 +3,7 @@ import rateLimit, { RateLimitRequestHandler } from 'express-rate-limit';
 export const limiter: RateLimitRequestHandler = rateLimit({
 	windowMs: 1000 * 60 * 15,
 	limit: 100,
+	// trustProxy: true,
 	message: {
 		status: 429,
 		message: 'Too many request, Please tray again later.',

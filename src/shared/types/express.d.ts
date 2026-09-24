@@ -1,4 +1,4 @@
-import { IJwtPayload } from '../../utils/security/token/token.types';
+import { IJwtPayload } from '../../providers/security/token/token.types';
 import { IUserBody } from './database.type';
 
 // Standard global Express augmentation for mixed/public routes

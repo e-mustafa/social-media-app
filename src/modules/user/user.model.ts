@@ -1,12 +1,12 @@
 import { model, Schema } from 'mongoose';
 import mongooseLeanVirtuals from 'mongoose-lean-virtuals';
-import { calcAge } from '../../utils/general/date';
-import { decrypt } from '../../utils/security/encryption.security';
-import { generateHash } from '../../utils/security/hash.security';
+import { decrypt } from '../../providers/security/encryption.security';
+import { generateHash } from '../../providers/security/hash.security';
+import { calcAge } from '../../shared/utils/date';
 import { GenderEnum, ProviderEnum, RoleEnum, StatusReasonEnum, UserStatusEnum } from './user.enums';
 import { IUser, IUserImg } from './user.types';
 
-export const userImgSchema = new Schema<IUserImg>(
+export const ImageSchema = new Schema<IUserImg>(
 	{
 		id: { type: String, required: true, trim: true },
 		url: { type: String, required: true, trim: true },
@@ -83,14 +83,14 @@ const userSchema = new Schema<IUser>(
 		bio: String,
 
 		avatar: {
-			type: userImgSchema,
+			type: ImageSchema,
 			default: null,
 			nullable: true,
 		},
 
 		cover: {
-			// type: [userImgSchema],
-			type: userImgSchema,
+			// type: [ImageSchema],
+			type: ImageSchema,
 			default: null,
 			nullable: true,
 		},

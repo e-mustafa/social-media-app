@@ -104,7 +104,7 @@ export class BaseRedisCache<TKey = TRedisKeyPart, TValue = string | number | Obj
 	// Checks if a member exists in a Redis Set
 	public async sIsMember(key: TKey, member: string): Promise<boolean> {
 		const result = await redisDB.sIsMember(this.getKey(key), member);
-		return result === 1 || result === true;
+		return result === 1;
 	}
 
 	// --- Pattern Operations ---

@@ -1,3 +1,4 @@
+import { StorageDiskEnum, StorageDiskFileEnum, StorageProviderEnum, UploadTypeEnum } from '../shared/enums/files.enum';
 import { sortOrderEnum } from '../shared/enums/query.enum';
 
 export const appConfig = {
@@ -36,6 +37,13 @@ export const appConfig = {
 
 	security: {
 		minPasswordLength: 8,
+	},
+
+	uploadStorage: {
+		type: UploadTypeEnum.CLOUD as UploadTypeEnum,
+		disk: StorageDiskEnum.DISK_STORAGE as StorageDiskEnum,
+		diskFile: StorageDiskFileEnum.TEMP as StorageDiskFileEnum,
+		provider: StorageProviderEnum.AWS_S3 as StorageProviderEnum,
 	},
 
 	user: {

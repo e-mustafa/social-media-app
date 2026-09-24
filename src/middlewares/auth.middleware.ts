@@ -1,10 +1,10 @@
 import { NextFunction, Request, Response } from 'express';
 import { AdminRoleEnum, RoleEnum, TRole } from '../modules/user/user.enums';
 import userRepository from '../modules/user/user.repository';
+import { decodeToken } from '../providers/security/token/token';
+import { IJwtPayload } from '../providers/security/token/token.types';
 import { UnAuthorizedException } from '../shared/response/exception.response';
 import { IUserBody } from '../shared/types';
-import { decodeToken } from '../utils/security/token/token';
-import { IJwtPayload } from '../utils/security/token/token.types';
 
 // Instantiate repository once outside request context
 const UserRepo = userRepository;
@@ -28,7 +28,7 @@ export const auth = (isOptional = false) => {
 
 		const user: IUserBody | null = await UserRepo.findById(decoded.id)
 			.lean()
-			.select('-friends -blockedUsers -password')
+			.select('-password')
 			.exec();
 		if (!user) {
 			if (isOptional) return next();

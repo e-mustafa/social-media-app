@@ -1,7 +1,7 @@
 import { model, Schema } from 'mongoose';
+import mongooseLeanVirtuals from 'mongoose-lean-virtuals';
 import { attachmentsSchemaDB } from '../post';
 import { IComment } from './comment.types';
-import mongooseLeanVirtuals from 'mongoose-lean-virtuals';
 
 const commentSchema = new Schema<IComment>(
 	{

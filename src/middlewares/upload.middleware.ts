@@ -2,11 +2,12 @@ import { NextFunction, Request, RequestHandler, Response } from 'express';
 import multer from 'multer';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { BadRequestException, InternalException } from '../../shared/response/exception.response';
-import AppError from '../error-handler/app-error';
-import { deleteFileHelper } from '../general/file.util';
-import { fileTypes, resolveFileTypes, TFileType } from './mime-types';
-import verifyFileSignatures from './verify-file-signatures';
+import { fileTypes, resolveFileTypes, TFileType } from '../providers/storage/mime-types';
+import verifyFileSignatures from '../providers/storage/verify-file-signatures';
+import { StorageDiskEnum } from '../shared/enums/files.enum';
+import AppError from '../shared/error-handler/app-error';
+import { BadRequestException, InternalException } from '../shared/response/exception.response';
+import { deleteFileHelper } from '../shared/utils/file.util';
 
 // ==========================================
 // 1. Shared File Filter
@@ -159,19 +160,19 @@ const createLocalStorage = (dir: string) => {
 // ==========================================
 // 4. Main Factory Function
 // ==========================================
-export type TUploadFactory = {
-	storageType?: 'local' | 'cloud';
+export type TUpload = {
+	storageDisk?: StorageDiskEnum;
 	dir?: string | undefined;
 	type?: TFileType | undefined;
 	size?: number | undefined;
 };
-export const uploadFactory = ({
-	storageType = 'cloud', // 'local' or 'cloud'
+export const upload = ({
+	storageDisk = StorageDiskEnum.DISK_STORAGE,
 	dir = 'general', // Only used for 'local'
 	type = fileTypes.images,
 	size = 2 * 1024 * 1024,
-}: TUploadFactory) => {
-	const isLocal: boolean = storageType === 'local';
+}: TUpload) => {
+	const isLocal: boolean = storageDisk === StorageDiskEnum.DISK_STORAGE;
 
 	// Select storage strategy based on parameter
 	const storage = isLocal ? createLocalStorage(dir) : multer.memoryStorage();
@@ -205,6 +206,7 @@ export const uploadFactory = ({
 
 // Aliases for clean imports and backward compatibility
 export const uploadLocal = ({ dir, type, size }: { dir?: string; type?: TFileType; size?: number } = {}) =>
-	uploadFactory({ storageType: 'local', dir, type, size });
+	upload({ storageDisk: StorageDiskEnum.DISK_STORAGE, dir, type, size });
 
-export const uploadCloud = (type?: TFileType, size?: number) => uploadFactory({ storageType: 'cloud', type, size });
+export const uploadCloud = (type?: TFileType, size?: number) =>
+	upload({ storageDisk: StorageDiskEnum.MEMORY_STORAGE, type, size });
