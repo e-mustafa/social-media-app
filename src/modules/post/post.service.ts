@@ -1,10 +1,11 @@
 import { QueryFilter, Types } from 'mongoose';
 import { isDev } from '../../config/env.config';
+import notifyEvents from '../../providers/events/notification.events';
+import { StoragePathBuilder } from '../../providers/storage/storage-path.builder';
+import storageService from '../../providers/storage/storage.service';
 import { sortOrderEnum } from '../../shared/enums/query.enum';
 import { BadRequestException, NotFoundException } from '../../shared/response/exception.response';
 import { Id, IFile, IPaginatedResult, IUserBody, TAttachment } from '../../shared/types';
-import notifyEvents from '../../utils/events/notification.events';
-import { deleteMultipleFromCloudinary, uploadPostAttachments } from '../../utils/upload-files/cloudinary';
 import blockRepository, { BlockRepository } from '../block/block.repository';
 import { commentServices } from '../comment';
 import commentRepository from '../comment/comment.repository';
@@ -170,12 +171,20 @@ class PostServices {
 		try {
 			// 5. upload attachments
 			if (files && files?.length > 0) {
-				const uploadResults = await uploadPostAttachments(files, userIdStr, postId.toString());
+				const location = StoragePathBuilder.getPostAttachmentLocation(userIdStr, postId.toString());
+				const uploadResults = await storageService.uploadMultipleFiles(files, location.folder);
 				attachments = uploadResults?.map((file) => ({
 					id: file.id,
 					url: file.url,
 					resourceType: file.resourceType,
 				}));
+
+				// const uploadResults2 = await uploadPostAttachments(files, userIdStr, postId.toString());
+				// attachments = uploadResults?.map((file) => ({
+				// 	id: file.id,
+				// 	url: file.url,
+				// 	resourceType: file.resourceType,
+				// }));
 			}
 
 			// 6. create post in db
@@ -198,13 +207,15 @@ class PostServices {
 
 			return post;
 		} catch (error) {
-			if (attachments.length > 0) await deleteMultipleFromCloudinary(attachments);
+			if (attachments.length > 0) await storageService.deleteFiles(attachments);
+			// if (attachments.length > 0) await deleteMultipleFromCloudinary(attachments);
 			throw error;
 		}
 	}
 
 	async updatePost(userId: Id, postId: Id, body: IUpdatePostDTO, files: IFile[]) {
 		const { content, isPublished, visibility, taggedUsers, removedAttachmentIds } = body || {};
+		const userIdStr = userId.toString();
 
 		const post = await this.PostRepo.findOne({ _id: postId, author: userId }).lean().exec();
 		if (!post) {
@@ -218,7 +229,6 @@ class PostServices {
 		let validTaggedUsers: string[] | undefined = undefined;
 		if (taggedUsers !== undefined) {
 			const taggedUsersSet = Array.from(new Set(taggedUsers.map((id) => id.toString())));
-			const userIdStr = userId.toString();
 
 			if (taggedUsersSet.includes(userIdStr)) {
 				throw new BadRequestException(
@@ -237,13 +247,22 @@ class PostServices {
 		try {
 			// 2. Process new file uploads if provided
 			if (files && files.length > 0) {
-				const uploadResults = await uploadPostAttachments(files, userId, postId.toString());
+				const location = StoragePathBuilder.getPostAttachmentLocation(userIdStr, postId.toString());
+				const uploadResults = await storageService.uploadMultipleFiles(files, location.folder);
 				newFiles =
 					uploadResults?.map((file) => ({
 						id: file.id,
 						url: file.url,
 						resourceType: file.resourceType,
 					})) || [];
+
+				// const uploadResults = await uploadPostAttachments(files, userId, postId.toString());
+				// newFiles =
+				// 	uploadResults?.map((file) => ({
+				// 		id: file.id,
+				// 		url: file.url,
+				// 		resourceType: file.resourceType,
+				// 	})) || [];
 			}
 
 			// 3. Construct updated attachments array safely
@@ -281,16 +300,15 @@ class PostServices {
 				.exec();
 
 			// 5. Clean up removed attachments from Cloudinary AFTER successful DB update
-			if (deletingAttachments.length > 0) {
-				await deleteMultipleFromCloudinary(deletingAttachments);
-			}
+			if (deletingAttachments.length > 0) await storageService.deleteFiles(deletingAttachments);
+			// if (deletingAttachments.length > 0) await deleteMultipleFromCloudinary(deletingAttachments);
 
 			return updatedPost;
 		} catch (error) {
 			// Rollback: Delete newly uploaded files from Cloudinary if DB operation fails
-			if (newFiles.length > 0) {
-				await deleteMultipleFromCloudinary(newFiles);
-			}
+			if (newFiles.length > 0) await storageService.deleteFiles(newFiles);
+			// if (newFiles.length > 0) await deleteMultipleFromCloudinary(newFiles);
+
 			throw error;
 		}
 	}
@@ -316,7 +334,8 @@ class PostServices {
 
 		// 3. Delete associated Cloudinary media files after DB deletion
 		if (post.attachments && post.attachments.length > 0) {
-			await deleteMultipleFromCloudinary(post.attachments);
+			await storageService.deleteFiles(post.attachments);
+			// await deleteMultipleFromCloudinary(post.attachments);
 		}
 
 		// 4. Cascading cleanup for related documents

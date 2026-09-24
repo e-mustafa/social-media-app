@@ -27,9 +27,9 @@ import {
 	userRoutes,
 } from './modules';
 import { reactionRouter, reactionRoutes } from './modules/reaction';
+import { connectRedis } from './providers/redis/client.redis';
+import { initializeSocket } from './providers/socket/socket.init';
 import { NotFoundException } from './shared/response/exception.response';
-import { connectRedis } from './utils/redis/client.redis';
-import { initializeSocket } from './utils/socket/socket.init';
 
 const apiBaseUrl = ENV.apiBaseUrl;
 
@@ -71,7 +71,7 @@ export const bootstrap = async (app: Express): Promise<void> => {
 	app.use(globalErrorHandler);
 
 	const httpServer = app.listen(ENV.port, () =>
-		console.log(chalk.bgGreenBright.bold('✔ App is running on port: ' + ENV.port)),
+		console.log(chalk.bgGreenBright.bold('✔✔ App is running on port: 🏃🏻‍♂️  ' + ENV.port)),
 	);
 
 	// initialize socket

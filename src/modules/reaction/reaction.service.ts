@@ -1,8 +1,8 @@
 import { QueryFilter } from 'mongoose';
 import { IDeleteResult } from '../../DB/base.repository';
+import notifyEvents from '../../providers/events/notification.events';
 import { ConflictException, NotFoundException } from '../../shared/response/exception.response';
 import { Id, IUserBody } from '../../shared/types';
-import notifyEvents from '../../utils/events/notification.events';
 import { blockRepository } from '../block';
 import commentRepository from '../comment/comment.repository';
 import { IComment } from '../comment/comment.types';

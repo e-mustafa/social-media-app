@@ -61,4 +61,12 @@ export const ENVcloudinaryConfig = {
 	secret: process.env.CLOUDINARY_API_SECRET || '',
 };
 
-export const ENVFirebaseAccountFile = process.env.FIREBASE_SERVICE_ACCOUNT || '';
+export const ENVFirebaseAccountFile = process.env.FIREBASE_SERVICE_ACCOUNT_File || '';
+export const ENVFirebaseAccountData = process.env.FIREBASE_SERVICE_ACCOUNT_DATA || '';
+
+export const ENV_AWS = {
+	region: process.env.AWS_REGION || '',
+	bucket: process.env.AWS_BUCKET_NAME || '',
+	accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+	secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+};

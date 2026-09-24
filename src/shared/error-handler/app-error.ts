@@ -1,4 +1,4 @@
-import { IFieldErrors } from '../../shared/types';
+import { IFieldErrors } from '../types';
 
 export interface IError extends Error {
 	statusCode: number;

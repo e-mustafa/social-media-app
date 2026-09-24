@@ -1,8 +1,6 @@
 import { appConfig } from '../../config/app.config';
 import { BaseRedisCache } from './base-redis-services';
 
-// export const changeEmailOtpService = new BaseRedisCache
-
 export const redisVerifyAccountOtp = new BaseRedisCache<string, string>(
 	(email) => `users:${email}:verify_account_otp`,
 	appConfig.otp.verifyEmail.expiresIn,

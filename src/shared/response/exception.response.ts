@@ -1,4 +1,4 @@
-import AppError from '../../utils/error-handler/app-error';
+import AppError from '../error-handler/app-error';
 import { IFieldErrors } from '../types/validation.type';
 
 export class InternalException extends AppError {

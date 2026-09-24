@@ -1,9 +1,10 @@
 import { Types } from 'mongoose';
+import notifyEvents from '../../providers/events/notification.events';
+import { StoragePathBuilder } from '../../providers/storage/storage-path.builder';
+import storageService from '../../providers/storage/storage.service';
 import { NotFoundException, UnAuthorizedException } from '../../shared/response/exception.response';
 import { Id, IFile, IPaginatedResult, IUserBody, TAttachment } from '../../shared/types';
 import { IQueryDTO } from '../../shared/validation/general-fields.validation';
-import notifyEvents from '../../utils/events/notification.events';
-import { deleteMultipleFromCloudinary, uploadCommentAttachments } from '../../utils/upload-files/cloudinary';
 import { blockRepository } from '../block';
 import { friendRepository } from '../friend';
 import { IPost, IPostWUsers, postRepository } from '../post';
@@ -54,13 +55,21 @@ class CommentServices {
 
 		// 1. Upload attachments to Cloudinary if files exist
 		if (files && files.length) {
-			const uploadedFiles = await uploadCommentAttachments(files, userIdStr, postId, commentId.toString());
+			const location = StoragePathBuilder.getCommentAttachmentLocation(userIdStr, postId, commentId.toString());
+			const uploadedFiles = await storageService.uploadMultipleFiles(files, location.folder);
 			attachments =
 				uploadedFiles?.map((file) => ({
 					id: file.id,
 					url: file.url,
 					resourceType: file.resourceType,
 				})) || [];
+			// const uploadedFiles = await uploadCommentAttachments(files, userIdStr, postId, commentId.toString());
+			// attachments =
+			// 	uploadedFiles?.map((file) => ({
+			// 		id: file.id,
+			// 		url: file.url,
+			// 		resourceType: file.resourceType,
+			// 	})) || [];
 		}
 
 		// 2. Create comment or reply document in database
@@ -180,7 +189,7 @@ class CommentServices {
 	 */
 	async updateComment(userId: Id, commentId: string, body: IUpdateCommentDTO, files: IFile[]): Promise<IComment> {
 		const { content, taggedUsers, removedAttachmentIds } = body || {};
-
+		const userIdStr = userId.toString();
 		// 1. Validate comment existence and user ownership
 		const comment = await this.CommentRepo.findById(commentId).lean().exec();
 		if (!comment) {
@@ -197,18 +206,30 @@ class CommentServices {
 		try {
 			// 2. Upload new media files if provided
 			if (files && files.length) {
-				const uploadedFiles = await uploadCommentAttachments(
-					files,
-					userId.toString(),
+				const location = StoragePathBuilder.getCommentAttachmentLocation(
+					userIdStr,
 					comment.postId.toString(),
-					commentId.toString(),
+					commentId,
 				);
-				newAttachments =
-					uploadedFiles?.map((file) => ({
-						id: file.id,
-						url: file.url,
-						resourceType: file.resourceType,
-					})) || [];
+				const uploadResults = await storageService.uploadMultipleFiles(files, location.folder);
+				const uploadedFiles = uploadResults.map((result) => ({
+					id: result.id,
+					url: result.url,
+					resourceType: result.resourceType,
+				}));
+
+				// const uploadedFiles = await uploadCommentAttachments(
+				// 	files,
+				// 	userIdStr,
+				// 	comment.postId.toString(),
+				// 	commentId.toString(),
+				// );
+				// newAttachments =
+				// 	uploadedFiles?.map((file) => ({
+				// 		id: file.id,
+				// 		url: file.url,
+				// 		resourceType: file.resourceType,
+				// 	})) || [];
 			}
 
 			let updatedAttachments: TAttachment[] = comment.attachments || [];
@@ -236,7 +257,8 @@ class CommentServices {
 
 			// 5. Delete removed attachments from Cloudinary
 			if (deletingAttachments && deletingAttachments.length > 0) {
-				await deleteMultipleFromCloudinary(deletingAttachments);
+				await storageService.deleteFiles(deletingAttachments);
+				// await deleteMultipleFromCloudinary(deletingAttachments);
 			}
 
 			// todo: send tag in post notification - update comment
@@ -244,9 +266,8 @@ class CommentServices {
 			return updatedComment;
 		} catch (error) {
 			// Rollback: Delete uploaded files from Cloudinary on failure
-			if (newAttachments.length > 0) {
-				await deleteMultipleFromCloudinary(newAttachments);
-			}
+			if (newAttachments.length > 0) await storageService.deleteFiles(newAttachments);
+			// if (newAttachments.length > 0) await deleteMultipleFromCloudinary(newAttachments);
 			throw error;
 		}
 	}
@@ -309,11 +330,12 @@ class CommentServices {
 
 		// 6. Clean up associated media files safely without throwing on CDN issues
 		if (allAttachments.length > 0) {
-			try {
-				await deleteMultipleFromCloudinary(allAttachments.map((e) => ({ id: e.id, resourceType: e.resourceType })));
-			} catch (error) {
-				console.error('Failed to cleanup comment attachments from Cloudinary:', error);
-			}
+			await storageService.deleteFiles(allAttachments.map((e) => ({ id: e.id, resourceType: e.resourceType })));
+			// try {
+			// 	await deleteMultipleFromCloudinary(allAttachments.map((e) => ({ id: e.id, resourceType: e.resourceType })));
+			// } catch (error) {
+			// 	console.error('Failed to cleanup comment attachments from Cloudinary:', error);
+			// }
 		}
 
 		return true;
@@ -412,11 +434,12 @@ class CommentServices {
 
 		// 3. Clean up Cloudinary storage asynchronously
 		if (allAttachments.length > 0) {
-			try {
-				await deleteMultipleFromCloudinary(allAttachments.map((e) => ({ id: e.id, resourceType: e.resourceType })));
-			} catch (error) {
-				console.error('Failed to cleanup post comments attachments from Cloudinary:', error);
-			}
+			await storageService.deleteFiles(allAttachments);
+			// try {
+			// 	await deleteMultipleFromCloudinary(allAttachments.map((e) => ({ id: e.id, resourceType: e.resourceType })));
+			// } catch (error) {
+			// 	console.error('Failed to cleanup post comments attachments from Cloudinary:', error);
+			// }
 		}
 
 		// Return gathered IDs to the orchestrator without any extra DB query

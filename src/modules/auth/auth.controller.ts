@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
 import { appConfig } from '../../config/app.config';
+import { removeCookiesTokens, setCookies } from '../../providers/security/set-cookies.security';
 import { successResponse } from '../../shared/response/success.response';
 import { Id } from '../../shared/types';
-import { removeCookiesTokens, setCookies } from '../../utils/security/set-cookies.security';
 import { ProviderEnum } from '../user/user.enums';
 import services from './auth.service';
 import {

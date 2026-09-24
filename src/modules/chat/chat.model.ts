@@ -25,7 +25,7 @@ const chatSchema = new Schema<IChat>(
 		},
 		groupDescription: {
 			type: String,
-			minLength: [3, 'Group name must be at least 3 characters long'],
+			minLength: [3, 'Group description must be at least 3 characters long'],
 		},
 		groupImg: groupImgSchema,
 		roomId: {

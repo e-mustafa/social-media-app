@@ -1,11 +1,12 @@
 import { QueryFilter } from 'mongoose';
+import { encrypt } from '../../providers/security/encryption.security';
+import { StoragePathBuilder } from '../../providers/storage/storage-path.builder';
+import storageService from '../../providers/storage/storage.service';
 import { BadRequestException, NotFoundException } from '../../shared/response/exception.response';
 import { Id, IFile, IPaginatedResult } from '../../shared/types';
 import { IQueryDTO, objectIdRegex } from '../../shared/validation/general-fields.validation';
-import { encrypt } from '../../utils/security/encryption.security';
-import cloudinary, { uploadUserProfileMedia } from '../../utils/upload-files/cloudinary';
 import { blockRepository, BlockRepository } from '../block';
-import chatSocketService from '../chat/chat.socket.service';
+import chatSocketService from '../chat/socket/chat.socket.service';
 import userRepository, { UserRepository } from './user.repository';
 import { IGeneralUser, IUser, IUserDocument } from './user.types';
 import { IUpdateProfileDTO } from './user.validation';
@@ -48,7 +49,15 @@ class UserServices {
 
 	async uploadUserPic(userId: Id, file: IFile): Promise<IUser> {
 		const fieldname = file?.fieldname as 'avatar' | 'cover';
-		const { id, url } = await uploadUserProfileMedia(file, userId, fieldname);
+
+		const location = StoragePathBuilder.getUserPicLocation(userId.toString(), fieldname);
+
+		const { id, url } = await storageService.uploadFile({
+			file,
+			folder: location.folder,
+			filename: location.filename!,
+		});
+		// const { id, url } = await uploadUserProfileMedia(file, userId, fieldname);
 
 		const updatedUser = await this.UserRepo.findByIdAndUpdate(userId, { [fieldname]: { id, url } })
 			.lean()
@@ -67,14 +76,19 @@ class UserServices {
 			throw new NotFoundException('You do/not have a ' + fieldname, 'Delete-user-img');
 		}
 
-		await cloudinary.uploader
-			.destroy(user?.[fieldname]?.id || `${fieldname}_${user._id}`, {
-				resource_type: 'image',
-				invalidate: true,
-			})
-			.catch((error) => {
-				console.error('Error deleting image from Cloudinary:', error);
-			});
+		await storageService.deleteFile(
+			user?.[fieldname]?.id || StoragePathBuilder.getUserPicLocation(user._id.toString(), fieldname).filename!,
+			'image',
+		);
+
+		// await cloudinary.uploader
+		// 	.destroy(user?.[fieldname]?.id || `${fieldname}_${user._id}`, {
+		// 		resource_type: 'image',
+		// 		invalidate: true,
+		// 	})
+		// 	.catch((error) => {
+		// 		console.error('Error deleting image from Cloudinary:', error);
+		// 	});
 
 		const updatedUser = await this.UserRepo.findByIdAndUpdate(user._id, { $set: { [fieldname]: null } })
 			.select(fieldname)

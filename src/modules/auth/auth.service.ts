@@ -3,6 +3,22 @@ import { TokenPayload } from 'google-auth-library';
 import { URL } from 'node:url';
 import { appConfig, frontendUrls } from '../../config/app.config';
 import { ENV } from '../../config/env.config';
+import emailEvents from '../../providers/events/email.events';
+import { reactiveAccountServices } from '../../providers/redis/reactivate-account-otp-service.redis';
+import { redisRefreshToken } from '../../providers/redis/refresh-token.redis';
+import { redisResetPasswordToken } from '../../providers/redis/reset-password-token.redis';
+import {
+	redisVerifyAccountAttempts,
+	redisVerifyAccountCooldown,
+	redisVerifyAccountFailedAttempts,
+	redisVerifyAccountOtp,
+	setRedisVerifyAccount,
+} from '../../providers/redis/verify-account-otp.redis';
+import { verifyHash } from '../../providers/security/hash.security';
+import { generateOtp, generateRandomToken, hashOtp, hashToken, verifyOtp } from '../../providers/security/otp-and-token';
+import { verifyOAuth2Google } from '../../providers/security/token/providers/google.token';
+import { decodeToken, generateTokens } from '../../providers/security/token/token';
+import { TTokens } from '../../providers/security/token/token.types';
 import {
 	BadRequestException,
 	ConflictException,
@@ -14,22 +30,6 @@ import {
 	ValidationErrorsException,
 } from '../../shared/response/exception.response';
 import { Id } from '../../shared/types';
-import emailEvents from '../../utils/events/email.events';
-import { reactiveAccountServices } from '../../utils/redis/reactivate-account-otp-service.redis';
-import { redisRefreshToken } from '../../utils/redis/refresh-token.redis';
-import { redisResetPasswordToken } from '../../utils/redis/reset-password-token.redis';
-import {
-	redisVerifyAccountAttempts,
-	redisVerifyAccountCooldown,
-	redisVerifyAccountFailedAttempts,
-	redisVerifyAccountOtp,
-	setRedisVerifyAccount,
-} from '../../utils/redis/verify-account-otp.redis';
-import { verifyHash } from '../../utils/security/hash.security';
-import { generateOtp, generateRandomToken, hashOtp, hashToken, verifyOtp } from '../../utils/security/otp-and-token';
-import { verifyOAuth2Google } from '../../utils/security/token/providers/google.token';
-import { decodeToken, generateTokens } from '../../utils/security/token/token';
-import { TTokens } from '../../utils/security/token/token.types';
 import { ProviderEnum, StatusReasonEnum, TProvider, UserStatusEnum } from '../user/user.enums';
 import { UserRepository } from '../user/user.repository';
 import { ISessionInfo, ISessionResponse, IUser, IUserDocument } from '../user/user.types';

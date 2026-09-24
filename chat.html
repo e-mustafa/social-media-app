@@ -1,0 +1,692 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chat Tester — Socket.IO</title>
+    <style>
+      :root {
+        --bg: #0f172a;
+        --card: #1e293b;
+        --border: #334155;
+        --text: #e2e8f0;
+        --muted: #94a3b8;
+        --accent: #3b82f6;
+        --ok: #22c55e;
+        --err: #ef4444;
+        --mine: #2563eb;
+        --theirs: #334155;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family:
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* ---------- top bar: login ---------- */
+      .topbar {
+        background: var(--card);
+        border-bottom: 1px solid var(--border);
+        padding: 10px 14px;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .topbar input {
+        padding: 8px 10px;
+        background: #0b1220;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--text);
+        font-size: 13px;
+      }
+      .topbar input.email {
+        width: 190px;
+      }
+      .topbar input.pass {
+        width: 140px;
+      }
+      button {
+        background: var(--accent);
+        color: #fff;
+        border: 0;
+        border-radius: 6px;
+        padding: 8px 14px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      button:hover {
+        filter: brightness(1.1);
+      }
+      button:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+      button.grey {
+        background: #475569;
+      }
+      .status {
+        margin-left: auto;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--err);
+        display: inline-block;
+      }
+      .dot.on {
+        background: var(--ok);
+      }
+
+      /* ---------- main layout ---------- */
+      .main {
+        flex: 1;
+        display: flex;
+        min-height: 0;
+      }
+
+      /* friends */
+      .side {
+        width: 250px;
+        background: var(--card);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+      }
+      .side h3 {
+        margin: 0;
+        padding: 12px 14px;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        border-bottom: 1px solid var(--border);
+      }
+      .friends {
+        flex: 1;
+        overflow-y: auto;
+      }
+      .friend {
+        padding: 11px 14px;
+        cursor: pointer;
+        border-bottom: 1px solid #27354a;
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        font-size: 14px;
+      }
+      .friend:hover {
+        background: #27354a;
+      }
+      .friend.active {
+        background: #1d4ed8;
+      }
+      .friend .badge {
+        margin-left: auto;
+        background: var(--err);
+        color: #fff;
+        font-size: 11px;
+        padding: 1px 6px;
+        border-radius: 10px;
+      }
+      .empty {
+        padding: 14px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      /* chat */
+      .chat {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      .chat-head {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border);
+        background: var(--card);
+        font-size: 14px;
+      }
+      .chat-head .sub {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .msg {
+        max-width: 68%;
+        padding: 8px 12px;
+        border-radius: 12px;
+        font-size: 14px;
+        line-height: 1.45;
+        word-wrap: break-word;
+      }
+      .msg.mine {
+        background: var(--mine);
+        align-self: flex-end;
+      }
+      .msg.theirs {
+        background: var(--theirs);
+        align-self: flex-start;
+      }
+      .msg .meta {
+        font-size: 10px;
+        opacity: 0.75;
+        margin-top: 3px;
+        text-align: right;
+      }
+      .typing {
+        padding: 0 16px 6px;
+        font-size: 12px;
+        color: var(--muted);
+        font-style: italic;
+        height: 18px;
+      }
+      .composer {
+        display: flex;
+        gap: 8px;
+        padding: 12px;
+        border-top: 1px solid var(--border);
+        background: var(--card);
+      }
+      .composer input {
+        flex: 1;
+        padding: 10px 12px;
+        background: #0b1220;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--text);
+        font-size: 14px;
+      }
+
+      /* log */
+      .log-wrap {
+        width: 300px;
+        background: #0b1220;
+        border-left: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+      }
+      .log {
+        flex: 1;
+        overflow-y: auto;
+        padding: 10px;
+        font-family: ui-monospace, Consolas, monospace;
+        font-size: 11px;
+        white-space: pre-wrap;
+        word-break: break-all;
+      }
+      .log div {
+        margin-bottom: 3px;
+      }
+      .ok {
+        color: var(--ok);
+      }
+      .err {
+        color: var(--err);
+      }
+      .muted {
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ================= TOP BAR ================= -->
+    <div class="topbar">
+      <input class="email" id="email" placeholder="email" />
+      <input
+        class="pass"
+        id="password"
+        type="password"
+        placeholder="password"
+      />
+      <button id="btnLogin">Login &amp; Connect</button>
+      <button id="btnDisconnect" class="grey" disabled>Disconnect</button>
+      <div class="status">
+        <span class="dot" id="statusDot"></span>
+        <span id="statusText">not connected</span>
+      </div>
+    </div>
+
+    <!-- ================= MAIN ================= -->
+    <div class="main">
+      <!-- friends -->
+      <div class="side">
+        <h3>Friends</h3>
+        <div class="friends" id="friends">
+          <div class="empty">Login first…</div>
+        </div>
+      </div>
+
+      <!-- chat -->
+      <div class="chat">
+        <div class="chat-head">
+          <div id="chatName">Select a friend</div>
+          <div class="sub" id="chatStatus"></div>
+        </div>
+        <div class="messages" id="messages"></div>
+        <div class="typing" id="typing"></div>
+        <div class="composer">
+          <input id="input" placeholder="Write a message…" disabled />
+          <button id="btnSend" disabled>Send</button>
+        </div>
+      </div>
+
+      <!-- log -->
+      <div class="log-wrap">
+        <h3
+          style="
+            margin: 0;
+            padding: 12px 14px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--muted);
+            border-bottom: 1px solid var(--border);
+          "
+        >
+          Socket events
+        </h3>
+        <div class="log" id="log"></div>
+      </div>
+    </div>
+
+    <!-- the Socket.IO client library -->
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+    <script>
+      // ============================================================
+      //  SMALL HELPERS
+      // ============================================================
+      const $ = (id) => document.getElementById(id);
+      const logEl = $("log");
+
+      // write one line in the right panel, so we SEE every socket event
+      const log = (msg, cls = "") => {
+        const time = new Date().toLocaleTimeString();
+        logEl.insertAdjacentHTML(
+          "afterbegin",
+          `<div class="${cls}">[${time}] ${msg}</div>`,
+        );
+      };
+
+      // ============================================================
+      //  STATE (the memory of this page)
+      // ============================================================
+      let socket = null; // the socket connection
+      let token = ""; // the access token (JWT)
+      let me = null; // my user object
+      let friends = []; // my friends list
+      let activeFriend = null; // the friend I am chatting with now
+      let onlineIds = []; // ids of the friends who are online
+      let unread = {}; // { friendId: number of new messages }
+      let typingTimer = null; // to send "stopTyping" automatically
+
+      // remember the email between reloads (easier when testing)
+      $("email").value = localStorage.getItem("chatEmail") || "";
+
+      // ============================================================
+      //  1) LOGIN  -> get the access token from the REST API
+      // ============================================================
+      $("btnLogin").onclick = async () => {
+        const email = $("email").value.trim();
+        const password = $("password").value;
+        if (!email || !password)
+          return log("email and password are required", "err");
+
+        try {
+          log("logging in…");
+          const response = await fetch(
+            "http://localhost:3000/api/v1/auth/login",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email, password }),
+            },
+          );
+          const result = await response.json();
+
+          if (!response.ok)
+            return log(`login failed: ${result.message}`, "err");
+
+          token = result.data.accessToken;
+          localStorage.setItem("chatEmail", email);
+          log("login ok", "ok");
+
+          await loadProfile(); // who am I + my friends
+          connectSocket(); // then open the socket
+        } catch (error) {
+          log(`login error: ${error.message}`, "err");
+        }
+      };
+
+      // ============================================================
+      //  2) PROFILE -> my name and my friends
+      // ============================================================
+      const loadProfile = async () => {
+        const response = await fetch(
+          "http://localhost:3000/api/v1/users/profile",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+        const result = await response.json();
+
+        me = result.data;
+        friends = me.friends || [];
+
+        log(`I am ${me.firstName} — ${friends.length} friend(s)`, "ok");
+        renderFriends();
+      };
+
+      // ============================================================
+      //  3) CONNECT THE SOCKET
+      // ============================================================
+      const connectSocket = () => {
+        // We send the token in "auth". The server middleware (io.use)
+        // reads it in socket.handshake.auth.token
+        socket = io("http://127.0.0.1:3000", {
+          auth: { token: `Bearer ${token}` },
+        });
+
+        // ---------- connection events ----------
+        socket.on("connect", () => {
+          setStatus(true, `connected (${socket.id})`);
+          log("socket connected", "ok");
+          $("btnDisconnect").disabled = false;
+        });
+
+        socket.on("connect_error", (error) => {
+          setStatus(false, "refused");
+          log(`connect_error: ${error.message}`, "err");
+        });
+
+        socket.on("disconnect", (reason) => {
+          setStatus(false, "disconnected");
+          log(`socket disconnected: ${reason}`, "err");
+        });
+
+        // ---------- PHASE 1: presence ----------
+
+        // when I connect, the server sends me the friends already online
+        socket.on("onlineFriends", (data) => {
+          onlineIds = data.friends;
+          log(`onlineFriends: ${onlineIds.length} online`);
+          renderFriends();
+        });
+
+        // a friend just came online
+        socket.on("userOnline", (data) => {
+          if (!onlineIds.includes(data.userId)) onlineIds.push(data.userId);
+          log(`🟢 userOnline: ${data.firstName}`, "ok");
+          renderFriends();
+          updateChatStatus();
+        });
+
+        // a friend left
+        socket.on("userOffline", (data) => {
+          onlineIds = onlineIds.filter((id) => id !== data.userId);
+          log(`⚪ userOffline: ${data.userId.slice(-6)}`);
+          renderFriends();
+          updateChatStatus();
+        });
+
+        // ---------- PHASE 3: chat ----------
+
+        // somebody sent me a message
+        socket.on("newMessage", (message) => {
+          const from = message.sender._id;
+          log(`📩 newMessage from ${message.sender.firstName}`, "ok");
+
+          // if his chat is open -> show the bubble and mark as read
+          if (activeFriend && activeFriend._id === from) {
+            addBubble(message, false);
+            socket.emit("markAsRead", { from });
+          } else {
+            // else -> add +1 on the red badge
+            unread[from] = (unread[from] || 0) + 1;
+            renderFriends();
+          }
+        });
+
+        // MY message was saved.
+        // There is no acknowledgement, so THIS event is the confirmation.
+        // It arrives on the device that sent it AND on my other devices,
+        // because the server uses io.to(myId) and not socket.to(myId).
+        socket.on("messageSent", (message) => {
+          log(`📤 messageSent (delivered: ${message.delivered})`, "ok");
+
+          // draw the bubble only if the chat of this person is open
+          if (activeFriend && activeFriend._id === message.receiverId) {
+            addBubble(message, true);
+          }
+        });
+
+        // ONE listener for every error of every event.
+        // The server sends this instead of answering a callback.
+        socket.on("socketError", (data) => {
+          log(`❌ ${data.event}: ${data.error}`, "err");
+        });
+
+        // the other person is writing
+        socket.on("userTyping", (data) => {
+          if (activeFriend && activeFriend._id === data.userId) {
+            $("typing").textContent = `${data.firstName} is typing…`;
+          }
+        });
+
+        socket.on("userStopTyping", (data) => {
+          if (activeFriend && activeFriend._id === data.userId) {
+            $("typing").textContent = "";
+          }
+        });
+
+        // he read my messages -> turn the ✓✓ blue
+        socket.on("messagesRead", (data) => {
+          log(`✓✓ messagesRead by ${data.by.slice(-6)} (${data.count})`, "ok");
+          document.querySelectorAll(".msg.mine .meta").forEach((meta) => {
+            meta.textContent = meta.textContent.replace("✓", "✓✓");
+          });
+        });
+      };
+
+      // ============================================================
+      //  4) DISCONNECT (to show the "offline" event to the other side)
+      // ============================================================
+      $("btnDisconnect").onclick = () => {
+        socket?.disconnect();
+        $("btnDisconnect").disabled = true;
+      };
+
+      const setStatus = (on, text) => {
+        $("statusDot").className = on ? "dot on" : "dot";
+        $("statusText").textContent = text;
+      };
+
+      // ============================================================
+      //  5) THE FRIENDS LIST
+      // ============================================================
+      const renderFriends = () => {
+        if (!friends.length) {
+          $("friends").innerHTML =
+            '<div class="empty">No friends yet.<br><br>Add a friend first with<br>POST /api/v1/user/friend-request/:userId</div>';
+          return;
+        }
+
+        $("friends").innerHTML = friends
+          .map((friend) => {
+            const isOnline = onlineIds.includes(friend._id);
+            const isActive = activeFriend && activeFriend._id === friend._id;
+            const count = unread[friend._id];
+            return `
+              <div class="friend ${isActive ? "active" : ""}" data-id="${friend._id}">
+                <span class="dot ${isOnline ? "on" : ""}"></span>
+                <span>${friend.firstName} ${friend.lastName}</span>
+                ${count ? `<span class="badge">${count}</span>` : ""}
+              </div>`;
+          })
+          .join("");
+
+        // click on a friend -> open his chat
+        document.querySelectorAll(".friend").forEach((element) => {
+          element.onclick = () => openChat(element.dataset.id);
+        });
+      };
+
+      // ============================================================
+      //  6) OPEN ONE CHAT -> load the OLD messages with REST
+      // ============================================================
+      const openChat = async (friendId) => {
+        activeFriend = friends.find((friend) => friend._id === friendId);
+        if (!activeFriend) return;
+
+        // clear the red badge of this friend
+        delete unread[friendId];
+        renderFriends();
+
+        $("chatName").textContent =
+          `${activeFriend.firstName} ${activeFriend.lastName}`;
+        updateChatStatus();
+        $("input").disabled = false;
+        $("btnSend").disabled = false;
+        $("messages").innerHTML = "";
+        $("typing").textContent = "";
+
+        // REST = history. Socket = live.
+        const response = await fetch(
+          `http://localhost:3000/api/v1/chat/${friendId}?page=1&limit=50`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+        const result = await response.json();
+
+        log(`loaded ${result.data.messages.length} old message(s)`);
+
+        result.data.messages.forEach((message) => {
+          const senderId = message.senderId?._id || message.senderId;
+          addBubble(
+            {
+              content: message.content,
+              createdAt: message.createdAt,
+              readAt: message.readAt,
+            },
+            senderId === me._id,
+          );
+        });
+
+        // I opened the chat -> tell him I read his messages
+        socket?.emit("markAsRead", { from: friendId });
+      };
+
+      const updateChatStatus = () => {
+        if (!activeFriend) return;
+        const isOnline = onlineIds.includes(activeFriend._id);
+        $("chatStatus").textContent = isOnline ? "🟢 online" : "⚪ offline";
+      };
+
+      // ============================================================
+      //  7) DRAW ONE BUBBLE
+      // ============================================================
+      const addBubble = (message, isMine) => {
+        const time = new Date(message.createdAt).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+        const ticks = isMine ? (message.readAt ? " ✓✓" : " ✓") : "";
+
+        $("messages").insertAdjacentHTML(
+          "beforeend",
+          `<div class="msg ${isMine ? "mine" : "theirs"}">
+             ${escapeHtml(message.content)}
+             <div class="meta">${time}${ticks}</div>
+           </div>`,
+        );
+
+        // always scroll to the newest message
+        $("messages").scrollTop = $("messages").scrollHeight;
+      };
+
+      // never put raw user text inside HTML (protection against XSS)
+      const escapeHtml = (text) =>
+        String(text).replace(
+          /[&<>"']/g,
+          (character) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[character],
+        );
+
+      // ============================================================
+      //  8) SEND A MESSAGE
+      // ============================================================
+      const sendMessage = () => {
+        const content = $("input").value.trim();
+        if (!content || !activeFriend || !socket) return;
+
+        // We only SEND. There is no callback and no answer here.
+        //
+        // The bubble is NOT drawn now. We wait for the server to send
+        // back the event "messageSent" - that is our proof that the
+        // message was really saved in the database.
+        // If it failed, the server sends "socketError" instead.
+        socket.emit("sendMessage", { to: activeFriend._id, content });
+
+        $("input").value = "";
+        socket.emit("stopTyping", { to: activeFriend._id });
+      };
+
+      $("btnSend").onclick = sendMessage;
+
+      // ============================================================
+      //  9) TYPING INDICATOR
+      // ============================================================
+      $("input").oninput = () => {
+        if (!activeFriend || !socket) return;
+
+        socket.emit("typing", { to: activeFriend._id });
+
+        // if the user stops writing for 1.5 second -> send "stopTyping"
+        clearTimeout(typingTimer);
+        typingTimer = setTimeout(() => {
+          socket.emit("stopTyping", { to: activeFriend._id });
+        }, 1500);
+      };
+
+      // Enter = send
+      $("input").onkeydown = (event) => {
+        if (event.key === "Enter") sendMessage();
+      };
+
+      log("Ready. Login with a confirmed account.", "muted");
+    </script>
+  </body>
+</html>
