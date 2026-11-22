@@ -1,6 +1,7 @@
 import { HydratedDocument } from 'mongoose';
 import { Id, TAttachment } from '../../shared/types';
 import { IGeneralUser } from '../user/user.types';
+import { TReactionType } from '../reaction/reaction.enum';
 
 export interface IComment {
 	_id: Id;
@@ -21,4 +22,4 @@ export interface IComment {
 }
 
 export type ICommentDocument = HydratedDocument<IComment>;
-export type ICommentWAuthor = IComment & { author: IGeneralUser };
+export type ICommentWAuthor = IComment & { author: IGeneralUser; userReaction?: TReactionType | null };

@@ -9,12 +9,13 @@ import { blockRepository } from '../block';
 import { friendRepository } from '../friend';
 import { IPost, IPostWUsers, postRepository } from '../post';
 import { reactionRepository } from '../reaction';
-import { TargetTypeEnum } from '../reaction/reaction.enum';
+import { TargetTypeEnum, ReactionTypeEnum } from '../reaction/reaction.enum';
 import { IUser, userRepository } from '../user';
 import { selectGeneralUserInfo } from '../user/user.service';
 import commentRepository from './comment.repository';
 import { IComment, ICommentWAuthor } from './comment.types';
 import { ICreateCommentDTO, ICreateReplyDTO, IUpdateCommentDTO } from './comment.validation';
+import Reaction from '../reaction/reaction.model';
 
 type createCommentOrReplyProps = {
 	user: IUserBody;
@@ -344,7 +345,7 @@ class CommentServices {
 	/**
 	 * Retrieves paginated top-level comments for a post, excluding comments from blocked users.
 	 */
-	async getPostComments(userId: Id, postId: Id, { page, limit }: IQueryDTO): Promise<IPaginatedResult<ICommentWAuthor>> {
+	async getPostComments(userId: Id, postId: Id, { page, limit }: IQueryDTO): Promise<IPaginatedResult<(ICommentWAuthor & { userReaction: string | null })[]>> {
 		// 1. Verify post access permissions
 		const post = await this.PostRepo.postWValidateAccess(userId, postId);
 		if (!post) {
@@ -364,13 +365,36 @@ class CommentServices {
 			.paginate(page, limit)
 			.exec();
 
-		return comments;
+		// Fetch user reactions for these comments
+		const commentsArray = comments.data as unknown as ICommentWAuthor[];
+		const commentIds = commentsArray.map((c) => c._id);
+		const userReactions = await Reaction.find({
+			targetId: { $in: commentIds },
+			targetType: TargetTypeEnum.COMMENT,
+			userId: userId,
+		})
+			.select('targetId reactionType')
+			.lean()
+			.exec();
+
+		const reactionMap = new Map(userReactions.map((r) => [r.targetId.toString(), r.reactionType]));
+
+		// Add userReaction to each comment
+		const commentsWithReactions = {
+			...comments,
+			data: commentsArray.map((comment) => ({
+				...comment,
+				userReaction: reactionMap.get(comment._id.toString()) || null,
+			})),
+		};
+
+		return commentsWithReactions as unknown as IPaginatedResult<(ICommentWAuthor & { userReaction: string | null })[]>;
 	}
 
 	/**
 	 * Retrieves paginated replies for a specific parent comment.
 	 */
-	async getCommentReplies(userId: Id, commentId: Id, { page, limit }: IQueryDTO): Promise<IPaginatedResult<IPostWUsers>> {
+	async getCommentReplies(userId: Id, commentId: Id, { page, limit }: IQueryDTO): Promise<IPaginatedResult<(IPostWUsers & { userReaction: string | null })[]>> {
 		// 1. Fetch parent comment first to ensure existence and acquire postId
 		const blockedIds = await this.BlockRepo.getBlockedUsersIds(userId);
 
@@ -411,7 +435,30 @@ class CommentServices {
 			.paginate(page, limit)
 			.exec();
 
-		return comments;
+		// Fetch user reactions for these replies
+		const repliesArray = comments.data as unknown as (IPostWUsers & { _id: Id })[];
+		const replyIds = repliesArray.map((c) => c._id);
+		const userReactions = await Reaction.find({
+			targetId: { $in: replyIds },
+			targetType: TargetTypeEnum.COMMENT,
+			userId: userId,
+		})
+			.select('targetId reactionType')
+			.lean()
+			.exec();
+
+		const reactionMap = new Map(userReactions.map((r) => [r.targetId.toString(), r.reactionType]));
+
+		// Add userReaction to each reply
+		const repliesWithReactions = {
+			...comments,
+			data: repliesArray.map((reply) => ({
+				...reply,
+				userReaction: reactionMap.get(reply._id.toString()) || null,
+			})),
+		};
+
+		return repliesWithReactions as unknown as IPaginatedResult<(IPostWUsers & { userReaction: string | null })[]>;
 	}
 
 	/**
