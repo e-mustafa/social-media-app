@@ -1,4 +1,5 @@
 import { configDotenv } from 'dotenv';
+import { StorageDiskEnum } from '../shared/enums/files.enum';
 
 configDotenv();
 
@@ -22,6 +23,9 @@ export const ENV = {
 		salt: process.env.SALT_ROUND,
 		encKey: process.env.ENCRYPTION_KEY,
 		iv: process.env.IV_LENGTH,
+	},
+	upload: {
+		storageDisk: process.env.STORAGE_DISK || StorageDiskEnum.DISK_STORAGE,
 	},
 };
 

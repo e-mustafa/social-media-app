@@ -30,7 +30,7 @@ export async function getSomeUserPosts(req: Request, res: Response) {
 
 export async function createPost(req: Request, res: Response) {
 	const { user, body = {}, files = [] } = req || {};
-	const data = await services.createPost(user?._id as Id, body, files as IFile[]);
+	const data = await services.createPost(user! as any, body, files as IFile[]);
 	successResponse({ res, status: 201, message: 'Post created successfully', data });
 }
 

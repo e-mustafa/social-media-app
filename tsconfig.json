@@ -43,5 +43,6 @@
 		"skipLibCheck": true,
 
 		"typeRoots": ["./node_modules/@types", "./src/shared/types"]
-	}
+	},
+	"exclude": ["node_modules", "dist", "zzz", "todo.ts"]
 }

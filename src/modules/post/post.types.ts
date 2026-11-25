@@ -2,6 +2,7 @@ import { HydratedDocument } from 'mongoose';
 import { Id, TAttachment } from '../../shared/types';
 import { IGeneralUser } from '../user';
 import { TPostVisibility } from './post.enum';
+import { TReactionType } from '../reaction/reaction.enum';
 
 export interface IPost {
 	_id: Id;
@@ -22,4 +23,4 @@ export interface IPost {
 export type IPostDocument = HydratedDocument<IPost>;
 export type IPostWAuthor = IPost & { author: IGeneralUser };
 export type IPostWTaggedUsers = IPost & { taggedUsers: IGeneralUser[] };
-export type IPostWUsers = IPost & { author: IGeneralUser; taggedUsers: IGeneralUser[] };
+export type IPostWUsers = IPost & { author: IGeneralUser; taggedUsers: IGeneralUser[]; myReaction?: TReactionType | null };
