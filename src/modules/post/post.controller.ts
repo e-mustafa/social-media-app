@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { successResponse } from '../../shared/response/success.response';
-import { Id, IFile } from '../../shared/types';
+import { Id, IFile, IUserBody } from '../../shared/types';
 import services from './post.service';
 import { IGetPostsQueryDTO } from './post.validation';
 
@@ -30,7 +30,7 @@ export async function getSomeUserPosts(req: Request, res: Response) {
 
 export async function createPost(req: Request, res: Response) {
 	const { user, body = {}, files = [] } = req || {};
-	const data = await services.createPost(user?._id as Id, body, files as IFile[]);
+	const data = await services.createPost(user as IUserBody, body, files as IFile[]);
 	successResponse({ res, status: 201, message: 'Post created successfully', data });
 }
 
@@ -41,7 +41,7 @@ export async function getPost(req: Request, res: Response) {
 
 export async function updatePost(req: Request, res: Response) {
 	const { user, params, body = {}, files = [] } = req || {};
-	const data = await services.updatePost(user?._id!, params.postId as string, body, files as IFile[]);
+	const data = await services.updatePost(user?._id as Id, params.postId as string, body, files as IFile[]);
 	successResponse({ res, message: 'Post updated successfully', data });
 }
 

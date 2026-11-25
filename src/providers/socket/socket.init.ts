@@ -9,7 +9,7 @@ import { IUserBody } from '../../shared/types';
 import { decodeToken } from '../security/token/token';
 
 // const connectedSockets: Map<string, string[]> = new Map<string, string[]>(); // socketId: [userId1, userId2, ...][] = [];
-
+export type UserSocket = Socket & { user: IUserBody };
 let io: Server | null = null;
 
 const initializeSocket = (httpServer: HttpServer) => {
@@ -50,7 +50,7 @@ const initializeSocket = (httpServer: HttpServer) => {
 		}
 	});
 
-	io.on('connection', (socket: Socket) => {
+	io.on('connection', (socket: UserSocket) => {
 		// console.log(`[Socket] Connected: ${socket.user.firstName} (Socket ID: ${socket.id})`);
 
 		// Join a private room dedicated to the logged-in user
