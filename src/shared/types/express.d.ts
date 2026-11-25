@@ -20,7 +20,7 @@ declare module 'express-serve-static-core' {
 	}
 }
 
-declare module 'Socket.io' {
+declare module 'socket.io' {
 	interface Socket {
 		user: IUserBody;
 		// decoded?: IJwtPayload;
