@@ -31,26 +31,48 @@ import { connectRedis } from './providers/redis/client.redis';
 import { initializeSocket } from './providers/socket/socket.init';
 import { NotFoundException } from './shared/response/exception.response';
 
-const apiBaseUrl = ENV.apiBaseUrl;
+// Normalize API base URL prefix to avoid malformed or double-slash paths
+const rawApiBaseUrl = ENV.apiBaseUrl.trim();
+const apiBaseUrl = rawApiBaseUrl ? `/${rawApiBaseUrl.replace(/^\/+|\/+$/g, '')}` : '';
+
+// Track connection initialization per process/container instance
+let connectionsInitialized = false;
 
 export const bootstrap = async (app: Express): Promise<void> => {
 	app.set('trust proxy', 1);
-	// security middlewares
-	app.use(helmet(), limiter, cors(corsOptions));
 
-	// body parsers
+	// Security and CORS middlewares
+	app.use(helmet());
+	app.use(cors(corsOptions));
+	app.use(limiter);
+
+	// Body and cookie parsers
 	app.use(express.json());
-	app.use(cookieParser()); // for parsing cookies
+	app.use(cookieParser());
 
-	// database connection
-	await connectDB();
-	await connectRedis();
+	// Initialize MongoDB and Redis once per runtime instance
+	if (!connectionsInitialized) {
+		await Promise.all([connectDB(), connectRedis()]);
+		connectionsInitialized = true;
+	}
 
-	app.get('/', (_req: Request, res: Response) => {
+	// Trace incoming path vs. rewritten URL during deployment verification
+	app.use((req: Request, _res: Response, next: NextFunction): void => {
+		if (process.env.NODE_ENV !== 'production' || process.env.DEBUG_ROUTES === 'true') {
+			console.log(`[route-trace] method=${req.method} url=${req.url} originalUrl=${req.originalUrl}`);
+		}
+		next();
+	});
+
+	app.get('/api/health', (_req: Request, res: Response): void => {
+		res.status(200).json({ status: 'ok' });
+	});
+
+	app.get('/', (_req: Request, res: Response): void => {
 		res.status(200).json({ message: `Welcome TO ${ENV.appName} APP` });
 	});
 
-	// routes --------------------------------------------------------
+	// Feature routes
 	app.use(`${apiBaseUrl}${authRoutes.base}`, authRouter);
 	app.use(`${apiBaseUrl}${userRoutes.base}`, userRouter);
 	app.use(`${apiBaseUrl}${friendRoutes.base}`, friendRouter);
@@ -60,20 +82,20 @@ export const bootstrap = async (app: Express): Promise<void> => {
 	app.use(`${apiBaseUrl}${reactionRoutes.base}`, reactionRouter);
 	app.use(`${apiBaseUrl}${notificationRoutes.base}`, notificationRouter);
 	app.use(`${apiBaseUrl}${chatRoutes.base}`, chatRouter);
-	// routes --------------------------------------------------------
 
-	// handle not found routes
-	app.use((_req: Request, _res: Response, _next: NextFunction) => {
+	// Handle unmatched routes
+	app.use((_req: Request, _res: Response, _next: NextFunction): void => {
 		throw new NotFoundException('❌ This route not exist!', 'route_not_exist');
 	});
 
-	// error handler
+	// Centralized error handler
 	app.use(globalErrorHandler);
 
-	const httpServer = app.listen(ENV.port, () =>
-		console.log(chalk.bgGreenBright.bold('✔✔ App is running on port: 🏃🏻‍♂️  ' + ENV.port)),
-	);
-
-	// initialize socket
-	initializeSocket(httpServer);
+	// Start persistent HTTP and Socket.io server only outside Vercel serverless
+	if (process.env.VERCEL !== '1') {
+		const httpServer = app.listen(ENV.port, (): void => {
+			console.log(chalk.bgGreenBright.bold('✔✔ App is running on port: 🏃🏻‍♂️  ' + ENV.port));
+		});
+		initializeSocket(httpServer);
+	}
 };
