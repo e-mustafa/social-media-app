@@ -330,8 +330,11 @@ export abstract class BaseRepository<T> {
 		return (await this.Model.distinct(key, finalFilter, options)) as unknown as T[];
 	}
 
-	aggregate<K extends never>(pipeline?: PipelineStage[], options?: AggregateOptions) {
-		return this.Model.aggregate(pipeline, options) as Aggregate<K[]>;
+	aggregate<K extends Record<string, unknown> = Record<string, unknown>>(
+		pipeline?: PipelineStage[],
+		options?: AggregateOptions,
+	): Aggregate<K[]> {
+		return this.Model.aggregate<K>(pipeline, options);
 	}
 
 	/**
