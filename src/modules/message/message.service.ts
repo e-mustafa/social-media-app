@@ -4,11 +4,10 @@ import { BadRequestException, NotFoundException } from '../../shared/response/ex
 import { Id, IPaginatedResult, IUserBody } from '../../shared/types';
 import { IQueryDTO } from '../../shared/validation/general-fields.validation';
 import { blockRepository } from '../block';
+import { friendRepository, IFriend } from '../friend';
+import { FriendRequestStatusEnum } from '../friend/friend.enum';
 import { selectGeneralUserInfo, userRepository } from '../user';
 import { IUser } from '../user/user.types';
-import { FriendRequestStatusEnum } from './friend.enum';
-import friendRepository from './friend.repository';
-import { IFriend } from './friend.types';
 
 class FriendServices {
 	constructor(

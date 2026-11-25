@@ -47,7 +47,7 @@ export interface IUpdateOptions extends MongooseUpdateQueryOptions {
 }
 
 type CountDocumentsOptions<T> = Pick<QueryOptions<T>, 'lean' | 'timestamps' | MongooseBaseQueryOptionKeys> & {
-	[other: string]: any;
+	[other: string]: unknown;
 } & {
 	session?: ClientSession;
 	ignoreDefaultFilters?: boolean;
@@ -330,7 +330,7 @@ export abstract class BaseRepository<T> {
 		return (await this.Model.distinct(key, finalFilter, options)) as unknown as T[];
 	}
 
-	aggregate<K extends any>(pipeline?: PipelineStage[], options?: AggregateOptions) {
+	aggregate<K extends never>(pipeline?: PipelineStage[], options?: AggregateOptions) {
 		return this.Model.aggregate(pipeline, options) as Aggregate<K[]>;
 	}
 

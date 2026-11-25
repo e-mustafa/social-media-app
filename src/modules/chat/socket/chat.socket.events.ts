@@ -1,5 +1,6 @@
 import { Server, Socket } from 'socket.io';
 import handleEventWValidation from '../../../providers/socket/socket.validator';
+import { IUserBody } from '../../../shared/types';
 import { userRepository } from '../../user';
 import {
 	IChatRoomPayload,
@@ -19,11 +20,12 @@ import {
 	typingSchema,
 } from './chat.socket.validation';
 
+type UserSocket = Socket & { user: IUserBody };
 class ChatEvents {
 	/**
 	 * Registers user presence events (online/offline status)
 	 */
-	async registerPresenceEvents(io: Server, socket: Socket): Promise<void> {
+	async registerPresenceEvents(io: Server, socket: UserSocket): Promise<void> {
 		try {
 			const user = socket.user;
 			const userId = user._id.toString();
