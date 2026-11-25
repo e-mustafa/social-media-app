@@ -1,5 +1,6 @@
 import { StorageDiskEnum, StorageDiskFileEnum, StorageProviderEnum, UploadTypeEnum } from '../shared/enums/files.enum';
 import { sortOrderEnum } from '../shared/enums/query.enum';
+import { ENV } from './env.config';
 
 export const appConfig = {
 	auth: {
@@ -40,10 +41,10 @@ export const appConfig = {
 	},
 
 	uploadStorage: {
-		type: UploadTypeEnum.CLOUD as UploadTypeEnum,
-		disk: StorageDiskEnum.DISK_STORAGE as StorageDiskEnum,
+		type: (process.env.UPLOAD_STORAGE_TYPE || UploadTypeEnum.CLOUD) as UploadTypeEnum,
+		disk: (ENV.upload.storageDisk || StorageDiskEnum.DISK_STORAGE) as StorageDiskEnum,
 		diskFile: StorageDiskFileEnum.TEMP as StorageDiskFileEnum,
-		provider: StorageProviderEnum.AWS_S3 as StorageProviderEnum,
+		provider: (process.env.UPLOAD_STORAGE_PROVIDER || StorageProviderEnum.AWS_S3) as StorageProviderEnum,
 	},
 
 	user: {
