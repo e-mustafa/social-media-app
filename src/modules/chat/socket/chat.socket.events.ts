@@ -1,6 +1,5 @@
 import { Server, Socket } from 'socket.io';
 import handleEventWValidation from '../../../providers/socket/socket.validator';
-import { IUserBody } from '../../../shared/types';
 import { userRepository } from '../../user';
 import {
 	IChatRoomPayload,
@@ -20,16 +19,19 @@ import {
 	typingSchema,
 } from './chat.socket.validation';
 
-type UserSocket = Socket & { user: IUserBody };
 class ChatEvents {
 	/**
 	 * Registers user presence events (online/offline status)
 	 */
-	async registerPresenceEvents(io: Server, socket: UserSocket): Promise<void> {
+	async registerPresenceEvents(io: Server, socket: Socket): Promise<void> {
 		try {
 			const user = socket.user;
-			const userId = user._id.toString();
+			if (!user) {
+				socket.emit('chat:error', { event: 'connection', error: 'Unauthorized socket user' });
+				return;
+			}
 
+			const userId = user._id.toString();
 			console.log(`[Socket] Connected: ${user.firstName} (Socket ID: ${socket.id})`);
 
 			const isFirstDevice = await chatSocketService.registerUser(socket);
@@ -38,7 +40,7 @@ class ChatEvents {
 				chatSocketService.notifyFriends(io, usersIds, 'user:online', { userId, online: true });
 			}
 
-			socket.on('disconnect', async () => {
+			socket.on('disconnect', async (): Promise<void> => {
 				try {
 					console.log(`[Socket] Disconnected: ${user.firstName} (Socket ID: ${socket.id})`);
 
@@ -54,12 +56,18 @@ class ChatEvents {
 						online: false,
 						lastSeenAt,
 					});
-				} catch (error) {
-					socket.emit('chat:error', { event: 'disconnect', error: (error as Error).message });
+				} catch (error: unknown) {
+					socket.emit('chat:error', {
+						event: 'disconnect',
+						error: error instanceof Error ? error.message : 'Disconnect error',
+					});
 				}
 			});
-		} catch (error) {
-			socket.emit('chat:error', { event: 'connection', error: (error as Error).message });
+		} catch (error: unknown) {
+			socket.emit('chat:error', {
+				event: 'connection',
+				error: error instanceof Error ? error.message : 'Connection error',
+			});
 		}
 	}
 
@@ -69,14 +77,14 @@ class ChatEvents {
 	registerChatRoomEvents(socket: Socket): void {
 		socket.on(
 			'chat:join',
-			handleEventWValidation(socket, 'chat:join', joinRoomSchema, async (payload: IChatRoomPayload) => {
+			handleEventWValidation(socket, 'chat:join', joinRoomSchema, async (payload: IChatRoomPayload): Promise<void> => {
 				await chatSocketService.joinRoom({ socket, chatId: payload.chatId });
 			}),
 		);
 
 		socket.on(
 			'chat:leave',
-			handleEventWValidation(socket, 'chat:leave', joinRoomSchema, async (payload: IChatRoomPayload) => {
+			handleEventWValidation(socket, 'chat:leave', joinRoomSchema, async (payload: IChatRoomPayload): Promise<void> => {
 				await chatSocketService.leaveRoom({ socket, chatId: payload.chatId });
 			}),
 		);
@@ -88,9 +96,14 @@ class ChatEvents {
 	sendMessageEvents(io: Server, socket: Socket): void {
 		socket.on(
 			'message:send',
-			handleEventWValidation(socket, 'message:send', sendMessageSchema, async (payload: ISendMessagePayload) => {
-				await chatSocketService.sendMessage({ io, socket, payload });
-			}),
+			handleEventWValidation(
+				socket,
+				'message:send',
+				sendMessageSchema,
+				async (payload: ISendMessagePayload): Promise<void> => {
+					await chatSocketService.sendMessage({ io, socket, payload });
+				},
+			),
 		);
 	}
 
@@ -100,16 +113,26 @@ class ChatEvents {
 	registerGroupEvents(io: Server, socket: Socket): void {
 		socket.on(
 			'group:join',
-			handleEventWValidation(socket, 'group:join', joinGroupSchema, async ({ roomId }: IGroupRoomPayload) => {
-				await chatSocketService.joinGroup({ socket, roomId });
-			}),
+			handleEventWValidation(
+				socket,
+				'group:join',
+				joinGroupSchema,
+				async ({ roomId }: IGroupRoomPayload): Promise<void> => {
+					await chatSocketService.joinGroup({ socket, roomId });
+				},
+			),
 		);
 
 		socket.on(
 			'group:leave',
-			handleEventWValidation(socket, 'group:leave', joinGroupSchema, async ({ roomId }: IGroupRoomPayload) => {
-				await chatSocketService.leaveGroup({ socket, roomId });
-			}),
+			handleEventWValidation(
+				socket,
+				'group:leave',
+				joinGroupSchema,
+				async ({ roomId }: IGroupRoomPayload): Promise<void> => {
+					await chatSocketService.leaveGroup({ socket, roomId });
+				},
+			),
 		);
 
 		socket.on(
@@ -118,7 +141,7 @@ class ChatEvents {
 				socket,
 				'group:send_message',
 				sendGroupMessageSchema,
-				async (payload: ISendGroupMessagePayload) => {
+				async (payload: ISendGroupMessagePayload): Promise<void> => {
 					await chatSocketService.sendGroupMessage({ io, socket, payload });
 				},
 			),
@@ -131,7 +154,8 @@ class ChatEvents {
 	registerTypingEvents(socket: Socket): void {
 		socket.on(
 			'chat:typing',
-			handleEventWValidation(socket, 'chat:typing', typingSchema, async (data: IUserTypingPayload) => {
+			handleEventWValidation(socket, 'chat:typing', typingSchema, async (data: IUserTypingPayload): Promise<void> => {
+				if (!socket.user) return;
 				const isTypingState = typeof data.isTyping === 'boolean' ? data.isTyping : true;
 				chatSocketService.userTyping(socket, data.chatId, socket.user._id, isTypingState);
 			}),
@@ -148,7 +172,7 @@ class ChatEvents {
 				socket,
 				'message:seen',
 				markAsSeenSchema,
-				async ({ senderId, chatId }: IMarkAsSeenPayload) => {
+				async ({ senderId, chatId }: IMarkAsSeenPayload): Promise<void> => {
 					await chatSocketService.markMessagesAsRead(io, socket, senderId, chatId);
 				},
 			),
@@ -159,7 +183,7 @@ class ChatEvents {
 	 * Centralized helper to initialize all event listeners for a socket
 	 */
 	registerAllEvents(io: Server, socket: Socket): void {
-		this.registerPresenceEvents(io, socket);
+		void this.registerPresenceEvents(io, socket);
 		this.registerChatRoomEvents(socket);
 		this.sendMessageEvents(io, socket);
 		this.registerGroupEvents(io, socket);
