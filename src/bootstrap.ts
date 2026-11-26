@@ -31,14 +31,10 @@ import { connectRedis } from './providers/redis/client.redis';
 import { initializeSocket } from './providers/socket/socket.init';
 import { NotFoundException } from './shared/response/exception.response';
 
-// Normalize API base URL prefix to avoid malformed or double-slash paths
 const rawApiBaseUrl = ENV.apiBaseUrl.trim();
 const apiBaseUrl = rawApiBaseUrl ? `/${rawApiBaseUrl.replace(/^\/+|\/+$/g, '')}` : '';
 
-// Track connection initialization per runtime instance
-let connectionsInitialized = false;
-
-export const bootstrap = async (app: Express): Promise<void> => {
+export const bootstrap = async (app: Express): Promise<Express> => {
 	app.set('trust proxy', 1);
 
 	// Security and CORS middlewares
@@ -50,38 +46,22 @@ export const bootstrap = async (app: Express): Promise<void> => {
 	app.use(express.json());
 	app.use(cookieParser());
 
-	console.log('apiBaseUrl', apiBaseUrl);
-	// // Initialize MongoDB and Redis once per runtime instance
-	// if (!connectionsInitialized) {
-	// 	await Promise.all([connectDB(), connectRedis()]);
-	// 	connectionsInitialized = true;
-	// }
-
-	// Ensure Database and Redis connections on incoming requests
+	// Ensure Database and Redis connections once per cold start or when disconnected
 	app.use(async (_req: Request, _res: Response, next: NextFunction): Promise<void> => {
 		try {
-			await connectDB();
-			await connectRedis();
+			await Promise.all([connectDB(), connectRedis()]);
 			next();
 		} catch (error) {
 			next(error);
 		}
 	});
 
-	// // Trace incoming path vs. rewritten URL during deployment verification
-	// app.use((req: Request, _res: Response, next: NextFunction): void => {
-	// 	if (process.env.NODE_ENV !== 'production' || process.env.DEBUG_ROUTES === 'true') {
-	// 		console.log(`[route-trace] method=${req.method} url=${req.url} originalUrl=${req.originalUrl}`);
-	// 	}
-	// 	next();
-	// });
-
-	// app.get('/api/health', (_req: Request, res: Response): void => {
-	// 	res.status(200).json({ status: 'ok' });
-	// });
-
 	app.get('/', (_req: Request, res: Response): void => {
 		res.status(200).json({ message: `Welcome TO ${ENV.appName} APP` });
+	});
+
+	app.get(`${apiBaseUrl}/health`, (_req: Request, res: Response): void => {
+		res.status(200).json({ status: 'ok', apiBaseUrl });
 	});
 
 	// Feature routes
@@ -110,6 +90,8 @@ export const bootstrap = async (app: Express): Promise<void> => {
 		});
 		initializeSocket(httpServer);
 	}
-};;
+
+	return app;
+};
 
 export default bootstrap;
