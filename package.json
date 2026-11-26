@@ -4,10 +4,12 @@
 	"description": "",
 	"main": "dist/index.js",
 	"scripts": {
-		"dev": "concurrently \"tsc -watch src/index.ts\" \"nodemon ./dist/index.js\" ",
+		"dev": "concurrently \"tsc --watch\" \"nodemon ./dist/index.js\"",
 		"dev2": "tsx watch src/index.ts",
-		"build": "tsc",
+		"build1": "tsc -p tsconfig.build.json",
+		"build": "tsup",
 		"start": "node dist/index.js",
+		"typecheck": "tsc --noEmit",
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
 	"keywords": [],

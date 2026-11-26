@@ -1,10 +1,10 @@
 /.env
+/.env.prod
 /dist
 /node_modules
 firebase.config.json
 mustafa_1_accessKeys.csv
 mustafa_1-bedrock-api-keys.csv
-
 /todo.ts
 /zzz
 
