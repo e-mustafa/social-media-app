@@ -3,7 +3,7 @@ import { bootstrap } from './bootstrap.js';
 
 const app: Express = express();
 
-bootstrap(app);
+await bootstrap(app);
 
 export default app;
 

@@ -2,34 +2,54 @@ import chalk from 'chalk';
 import { createClient } from 'redis';
 import { ENV } from '../../config/env.config';
 
+let redisConnectPromise: Promise<void> | null = null;
+const isTlsUrl = ENV.db.redisUrl.startsWith('rediss://');
+
 export const redisDB = createClient({
 	url: ENV.db.redisUrl,
 	socket: {
-		// set connection timeout to 5 seconds to prevent infinite hanging in Serverless environment
-		connectTimeout: 5000,
+		connectTimeout: 10000,
+		...(isTlsUrl ? { tls: true } : {}),
 		reconnectStrategy: (retries: number) => {
-			// if retries > 3, throw error and stop
-			if (retries > 3) {
-				return new Error('❌ Redis connection failed permanently. Skipping...');
+			if (retries > 10) {
+				return new Error('❌ Redis connection failed after maximum retries.');
 			}
-			// wait a short time between attempts
-			return Math.min(retries * 100, 2000);
+			return Math.min(retries * 200, 3000);
 		},
 	},
 });
 
-redisDB.on('error', (err) => console.log(chalk.red('❌ Redis Error:'), err.message));
-redisDB.on('ready', () => console.log(chalk.green('✔ Connected to Redis successfully 🏪')));
+redisDB.on('error', (err: Error) => {
+	console.log(chalk.red('❌ Redis Error:'), err.message);
+});
 
-export async function connectRedis() {
-	// be sure that the client is not connected already to avoid errors in Serverless environment
-	if (!redisDB.isOpen) {
-		try {
-			await redisDB.connect();
-			console.log(chalk.green('✔ Redis connection initiated.'));
-		} catch (error: unknown) {
-			console.error(chalk.red('❌ Failed to connect to Redis:'), (error as Error).message);
-			// Don't put process.exit(1) here so that the app doesn't stop completely if Redis is optional
-		}
+redisDB.on('ready', () => {
+	console.log(chalk.green('✔ Connected to Redis successfully 🏪'));
+});
+
+export async function connectRedis(): Promise<void> {
+	if (!ENV.db.redisUrl) {
+		console.error('❌ Redis Database connection error: No DB Link from env');
+		return;
 	}
+
+	if (redisDB.isReady) {
+		return;
+	}
+
+	if (!redisConnectPromise) {
+		redisConnectPromise = redisDB
+			.connect()
+			.then(() => {
+				console.log(chalk.green('✔ Redis connection initiated.'));
+			})
+			.catch((error: unknown) => {
+				console.error(chalk.red('❌ Failed to connect to Redis:'), (error as Error).message);
+			})
+			.finally(() => {
+				redisConnectPromise = null;
+			});
+	}
+
+	await redisConnectPromise;
 }
