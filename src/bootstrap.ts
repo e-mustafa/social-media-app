@@ -50,23 +50,35 @@ export const bootstrap = async (app: Express): Promise<void> => {
 	app.use(express.json());
 	app.use(cookieParser());
 
-	// Initialize MongoDB and Redis once per runtime instance
-	if (!connectionsInitialized) {
-		await Promise.all([connectDB(), connectRedis()]);
-		connectionsInitialized = true;
-	}
+	console.log('apiBaseUrl', apiBaseUrl);
+	// // Initialize MongoDB and Redis once per runtime instance
+	// if (!connectionsInitialized) {
+	// 	await Promise.all([connectDB(), connectRedis()]);
+	// 	connectionsInitialized = true;
+	// }
 
-	// Trace incoming path vs. rewritten URL during deployment verification
-	app.use((req: Request, _res: Response, next: NextFunction): void => {
-		if (process.env.NODE_ENV !== 'production' || process.env.DEBUG_ROUTES === 'true') {
-			console.log(`[route-trace] method=${req.method} url=${req.url} originalUrl=${req.originalUrl}`);
+	// Ensure Database and Redis connections on incoming requests
+	app.use(async (_req: Request, _res: Response, next: NextFunction): Promise<void> => {
+		try {
+			await connectDB();
+			await connectRedis();
+			next();
+		} catch (error) {
+			next(error);
 		}
-		next();
 	});
 
-	app.get('/api/health', (_req: Request, res: Response): void => {
-		res.status(200).json({ status: 'ok' });
-	});
+	// // Trace incoming path vs. rewritten URL during deployment verification
+	// app.use((req: Request, _res: Response, next: NextFunction): void => {
+	// 	if (process.env.NODE_ENV !== 'production' || process.env.DEBUG_ROUTES === 'true') {
+	// 		console.log(`[route-trace] method=${req.method} url=${req.url} originalUrl=${req.originalUrl}`);
+	// 	}
+	// 	next();
+	// });
+
+	// app.get('/api/health', (_req: Request, res: Response): void => {
+	// 	res.status(200).json({ status: 'ok' });
+	// });
 
 	app.get('/', (_req: Request, res: Response): void => {
 		res.status(200).json({ message: `Welcome TO ${ENV.appName} APP` });
@@ -98,6 +110,6 @@ export const bootstrap = async (app: Express): Promise<void> => {
 		});
 		initializeSocket(httpServer);
 	}
-};
+};;
 
 export default bootstrap;
