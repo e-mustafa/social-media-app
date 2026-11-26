@@ -1,10 +1,25 @@
 import { configDotenv } from 'dotenv';
 import { StorageDiskEnum } from '../shared/enums/files.enum';
 
-configDotenv();
+// Only load .env locally when environment variables are not already injected by the runtime
+const hasInjectedEnv = Boolean(process.env.VERCEL || process.env.DATABASE_URL);
+
+if (!hasInjectedEnv) {
+	configDotenv();
+}
 
 const port = process.env.APP_PORT || '3500';
-const appUrl = process.env.APP_URL ? `${process.env.APP_URL}:${port}` : `http://localhost:${port}`;
+const resolveAppUrl = (): string => {
+	if (process.env.APP_URL) {
+		return process.env.APP_URL;
+	}
+	if (process.env.VERCEL_URL) {
+		return `https://${process.env.VERCEL_URL}`;
+	}
+	return `http://localhost:${port}`;
+};
+
+const appUrl = resolveAppUrl();
 
 export const ENV = {
 	appName: process.env.APP_NAME || 'Social Media',
