@@ -3,6 +3,7 @@ import { defineConfig } from 'tsup';
 export default defineConfig({
 	// Entry point of the application
 	entry: ['src/index.ts'],
+	outDir: 'dist',
 
 	// Output format set strictly to ES Module
 	format: ['esm'],
