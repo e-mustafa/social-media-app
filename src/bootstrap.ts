@@ -34,7 +34,7 @@ import { NotFoundException } from './shared/response/exception.response';
 const rawApiBaseUrl = ENV.apiBaseUrl.trim();
 const apiBaseUrl = rawApiBaseUrl ? `/${rawApiBaseUrl.replace(/^\/+|\/+$/g, '')}` : '';
 
-export const bootstrap = async (app: Express): Promise<Express> => {
+export const bootstrap = (app: Express): Express => {
 	app.set('trust proxy', 1);
 
 	// Security and CORS middlewares
