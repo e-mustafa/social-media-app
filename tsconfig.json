@@ -32,6 +32,8 @@
 		"isolatedModules": true,
 		"noUncheckedSideEffectImports": true,
 
+		
+
 		"typeRoots": ["./node_modules/@types", "./src/shared/types"]
 	},
 	"include": ["src/**/*"],
