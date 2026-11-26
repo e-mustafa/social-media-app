@@ -35,7 +35,7 @@ import { NotFoundException } from './shared/response/exception.response';
 const rawApiBaseUrl = ENV.apiBaseUrl.trim();
 const apiBaseUrl = rawApiBaseUrl ? `/${rawApiBaseUrl.replace(/^\/+|\/+$/g, '')}` : '';
 
-// Track connection initialization per process/container instance
+// Track connection initialization per runtime instance
 let connectionsInitialized = false;
 
 export const bootstrap = async (app: Express): Promise<void> => {
@@ -85,7 +85,7 @@ export const bootstrap = async (app: Express): Promise<void> => {
 
 	// Handle unmatched routes
 	app.use((_req: Request, _res: Response, _next: NextFunction): void => {
-		throw new NotFoundException('❌ This route not exist!', 'route_not_exist');
+		throw new NotFoundException('❌ This route does not exist!', 'route_not_exist');
 	});
 
 	// Centralized error handler
@@ -99,3 +99,5 @@ export const bootstrap = async (app: Express): Promise<void> => {
 		initializeSocket(httpServer);
 	}
 };
+
+export default bootstrap;
